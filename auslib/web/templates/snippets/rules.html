@@ -1,0 +1,8 @@
+{% if rules %}
+Below is a complete list of all of the rules
+{% endif %}
+<ul>
+    {% for rule in rules %}
+        <li>{{ rule }}</li>
+    {% endfor %}
+</ul>
