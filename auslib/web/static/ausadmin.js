@@ -48,13 +48,13 @@ function deletePermission(username, permission, data_version) {
 
 function submitPermissionForm(username, permissionForm, element) {
     clicked = permissionForm.data('clicked');
-    permission = $('[name*=permission]', permissionForm).val()
-    options = $('[name*=options]', permissionForm).val()
-    data_version = $('[name*=data_version]', permissionForm).val()
-    if (clicked == 'update') {
+    permission = $('[name*=permission]', permissionForm).val();
+    options = $('[name*=options]', permissionForm).val();
+    data_version = $('[name*=data_version]', permissionForm).val();
+    if (clicked === 'update') {
         updatePermission(username, permission, options, data_version);
     }
-    else if (clicked == 'delete') {
+    else if (clicked === 'delete') {
         deletePermission(username, permission, data_version)
         .success(function() {
             element.remove();
