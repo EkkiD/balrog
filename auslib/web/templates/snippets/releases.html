@@ -1,0 +1,22 @@
+{% if releases %}
+Below is a complete list of all of the releases
+Click through to access the data field
+{% endif %}
+<table>
+    <tr>
+        {% for col in releases[0].keys() %}
+        <th>{{ col }}</th>
+        {% endfor %}
+    </tr>
+    {% for row in releases %}
+    <tr>
+        {% for key,value in row.iteritems() %}
+            {% if key == 'data' %}
+                <td> <a href='releases/{{ row.name }}'>link</a></td>
+            {% else  %}
+                <td> {{ value }} </td>
+            {% endif %}
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
