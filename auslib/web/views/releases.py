@@ -79,7 +79,7 @@ class SingleLocaleView(AdminView):
 class ReleasesView(AdminView):
     """/releases.html """
     def get(self):
-        limit = 10
+        limit = None
         releases = db.releases.getReleases(limit=limit)
         return render_template('releases.html', releases=releases)
 
