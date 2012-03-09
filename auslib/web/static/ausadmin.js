@@ -6,6 +6,10 @@ function getPermissionUrl(username, permission) {
     return SCRIPT_ROOT + '/users/' + username + '/permissions/' + permission;
 }
 
+function getRuleUrl(rule_id) {
+    return SCRIPT_ROOT + '/rules/' + rule_id;
+}
+
 function addNewPermission(username, permission, options, element) {
     url = getPermissionUrl(username, permission);
     data = {
@@ -60,6 +64,18 @@ function submitPermissionForm(username, permissionForm, element) {
             element.remove();
         });
     }
+}
+
+function submitThrottleForm(rule_id, throttleForm){
+    url = getRuleUrl(rule_id);
+    throttle = $('[name*=throttle]', throttleForm).val();
+    data_version = $('[name*=data_version]', throttleForm).val();
+    data = {
+        'throttle': throttle,
+        'data_version': data_version
+    };
+    return $.ajax(url,{'type': 'post', 'data': data})
+        .error(handleError);
 }
 
 function redirect(page, args) {

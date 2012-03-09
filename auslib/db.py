@@ -371,7 +371,7 @@ class AUSTable(object):
         if self.history and not changed_by:
             raise ValueError("changed_by must be passed for Tables that have history")
         if self.versioned and not old_data_version:
-            raise ValueError("old_data_version must be passed for Tables that are versioned")
+            raise ValueError("update: old_data_version must be passed for Tables that are versioned")
 
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
@@ -553,6 +553,24 @@ class Rules(AUSTable):
             for r in matchingRules:
                 log.debug("Rules.getRulesMatchingQuery: %s", r)
         return matchingRules
+
+    def getRuleById(self, rule_id, transaction=None):
+        """ Returns the unique rule that matches the give rule_id """
+        rules = self.select( where=[self.rule_id==rule_id], transaction=transaction)
+        found = rules.__len__()
+        log.debug("Rules.getRuleById: Rules found: %s", found)
+        if found > 1 or found == 0:
+            return None
+        log.debug("Rules.getRuleById: Match:")
+        log.debug("Rules.getRuleById: %s", rules[0])
+        return rules[0]
+
+    def updateRule(self, changed_by, rule_id, what, old_data_version, transaction=None):
+        """ Update the rule given by rule_id with the parameter what """
+        where = [self.rule_id==rule_id]
+        self.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version, transaction=transaction)
+            
+
 
 class Releases(AUSTable):
     def __init__(self, metadata, dialect):
