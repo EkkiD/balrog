@@ -48,5 +48,6 @@ class NewPermissionForm(PermissionForm):
 class ExistingPermissionForm(PermissionForm):
     permission = TextField('Permission', validators=[Required()], widget=DisableableTextInput(disabled=True))
 
-class ThrottleForm(DbEditableForm):
+class RuleForm(DbEditableForm):
     throttle = IntegerField('Throttle', validators=[Required()])
+    mapping = TextField('Mapping', validators=[Required()])

@@ -1,28 +1,36 @@
 {% if rules %}
 Below is a complete list of all of the rules
 {% endif %}
+<form id='rules_table' onsubmit='submitRuleForm($("#rules_table")); return false;'>
 <table>
     <tr>
         {% for col in rules[0].keys() %}
         <th>{{ col }}</th>
         {% endfor %}
+        <th>Update</th>
     </tr>
     {% for row in rules %}
     <tr>
+        {% set rule_id = row['rule_id'] %}
         {% for key,value in row.iteritems() %}
-            <td>
-            {% if key == 'throttle' %}
-                {% set rule_id = row['rule_id'] %}
-                <form id='{{ rule_id }}_throttle' onsubmit='submitThrottleForm("{{ rule_id }}", $("#{{ rule_id }}_throttle")); return false;'>
-                    {{ value.throttle()|safe }}
-                    {{ value.data_version()|safe }}
-                    <input type='submit' name='submit' value='Update' />
-                </form>
-            {% else %}
-                {{ value }}
-            {% endif %}
+            {% set form = forms[rule_id] %}
+            <td id='{{ key }}_r{{ rule_id }}'>
+                {% if key == 'throttle' %}
+                    {{ form.throttle()|safe }}
+                {% elif key ==  'mapping' %}
+                    {{ form.mapping()|safe }}
+                {% elif key ==  'data_version' %}
+                    {{ value }}
+                    {{ form.data_version()|safe }}
+                {% else %}
+                    {{ value }}
+                {% endif %}
             </td>
         {% endfor %}
+        <td id='Update_r{{ rule_id }}'>
+            <input type='submit' name='submit' value='Update' onclick='$("#rules_table").data("rule_id", "{{ rule_id }}");' />
+        </td>
     </tr>
     {% endfor %}
 </table>
+</form>

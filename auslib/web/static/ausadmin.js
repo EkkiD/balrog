@@ -78,6 +78,23 @@ function submitThrottleForm(rule_id, throttleForm){
         .error(handleError);
 }
 
+function submitRuleForm(ruleForm){
+    rule_id = ruleForm.data('rule_id');
+
+    url = getRuleUrl(rule_id);
+
+    throttle = $('[name='+rule_id+'-throttle]', ruleForm).val();
+    data_version = $('[name='+rule_id+'-data_version]', ruleForm).val();
+    mapping = $('[name='+rule_id+'-mapping]', ruleForm).val();
+    data = {
+        'throttle': throttle,
+        'mapping': mapping,
+        'data_version': data_version
+    };
+    return $.ajax(url,{'type': 'post', 'data': data})
+        .error(handleError);
+}
+
 function redirect(page, args) {
     window.location.assign(page + '?' + $.param(args));
 }

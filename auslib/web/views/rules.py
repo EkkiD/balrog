@@ -4,7 +4,7 @@ from flask import render_template, request, Response, jsonify
 
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
-from auslib.web.views.forms import ThrottleForm
+from auslib.web.views.forms import RuleForm
 
 import logging
 log = logging.getLogger(__name__)
@@ -18,11 +18,16 @@ class RulesPageView(AdminView):
     def get(self):
         rules = db.rules.getOrderedRules()
 
-        for rule in rules:
-            prefix = ""
-            rule['throttle'] = ThrottleForm(prefix=prefix, throttle=rule['throttle'],  data_version=rule['data_version'])
+        forms = {}
 
-        return render_template('rules.html', rules=rules)
+        for rule in rules:
+            rule_id = rule['rule_id']
+            rule_id_str = str(rule_id)
+            forms[rule_id] = RuleForm(prefix=rule_id_str, throttle=rule['throttle'],  
+                                    mapping=rule['mapping'], data_version=rule['data_version'])
+
+        log.debug(forms)
+        return render_template('rules.html', rules=rules, forms=forms)
 
 class SingleRuleView(AdminView):
 
@@ -34,8 +39,9 @@ class SingleRuleView(AdminView):
         if not db.rules.getRuleById(rule_id, transaction=transaction):
             return Response(status=404)
         try:
-            form = ThrottleForm()
-            what = dict(throttle=form.throttle.data)
+            form = RuleForm()
+            what = dict(throttle=form.throttle.data,   
+                        mapping=form.mapping.data)
             log.debug("SingleRuleView: POST: old_data_version: %s", form.data_version.data)
             db.rules.updateRule(changed_by, rule_id, what, old_data_version=form.data_version.data)
             return Response(status=200)
