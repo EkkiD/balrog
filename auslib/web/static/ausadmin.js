@@ -86,9 +86,11 @@ function submitRuleForm(ruleForm){
     throttle = $('[name='+rule_id+'-throttle]', ruleForm).val();
     data_version = $('[name='+rule_id+'-data_version]', ruleForm).val();
     mapping = $('[name='+rule_id+'-mapping]', ruleForm).val();
+    priority = $('[name='+rule_id+'-priority]', ruleForm).val();
     data = {
         'throttle': throttle,
         'mapping': mapping,
+        'priority': priority,
         'data_version': data_version
     };
     return $.ajax(url,{'type': 'post', 'data': data})

@@ -24,7 +24,8 @@ class RulesPageView(AdminView):
             rule_id = rule['rule_id']
             rule_id_str = str(rule_id)
             forms[rule_id] = RuleForm(prefix=rule_id_str, throttle=rule['throttle'],  
-                                    mapping=rule['mapping'], data_version=rule['data_version'])
+                                    mapping=rule['mapping'], priority=rule['priority'], 
+                                    data_version=rule['data_version'])
 
         log.debug(forms)
         return render_template('rules.html', rules=rules, forms=forms)

@@ -50,4 +50,5 @@ class ExistingPermissionForm(PermissionForm):
 
 class RuleForm(DbEditableForm):
     throttle = IntegerField('Throttle', validators=[Required()])
+    priority = IntegerField('Priority', validators=[Required()])
     mapping = TextField('Mapping', validators=[Required()])
