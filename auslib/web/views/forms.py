@@ -2,7 +2,7 @@ from simplejson import JSONDecodeError
 import simplejson as json
 import sys
 
-from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, IntegerField
+from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, IntegerField, SelectField
 
 import logging
 log = logging.getLogger(__name__)
@@ -51,4 +51,4 @@ class ExistingPermissionForm(PermissionForm):
 class RuleForm(DbEditableForm):
     throttle = IntegerField('Throttle', validators=[Required()])
     priority = IntegerField('Priority', validators=[Required()])
-    mapping = TextField('Mapping', validators=[Required()])
+    mapping = SelectField('Mapping', validators=[Required()])

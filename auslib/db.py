@@ -606,6 +606,16 @@ class Releases(AUSTable):
             row['data'] = blob
         return rows
 
+    def getReleaseNames(self, product=None, version=None, limit=None, transaction=None):
+        where = []
+        if product:
+            where.append(self.product==product)
+        if version:
+            where.append(self.version==version)
+        column = [self.name]
+        rows = self.select(where=where, columns=column, limit=limit, transaction=transaction)
+        return rows
+
     def getReleaseBlob(self, name, transaction=None):
         try:
             row = self.select(where=[self.name==name], columns=[self.data], limit=1, transaction=transaction)[0]

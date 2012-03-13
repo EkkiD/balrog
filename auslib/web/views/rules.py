@@ -26,7 +26,8 @@ class RulesPageView(AdminView):
             forms[rule_id] = RuleForm(prefix=rule_id_str, throttle=rule['throttle'],  
                                     mapping=rule['mapping'], priority=rule['priority'], 
                                     data_version=rule['data_version'])
-
+            forms[rule_id].mapping.choices = [(item['name'],item['name']) for item in 
+                                                db.releases.getReleaseNames()]
         log.debug(forms)
         return render_template('rules.html', rules=rules, forms=forms)
 
