@@ -557,6 +557,7 @@ class Rules(AUSTable):
 class Releases(AUSTable):
     def __init__(self, metadata, dialect):
         self.table = Table('releases', metadata,
+            Column('release-id', Integer, autoincrement=True),
             Column('name', String(100), primary_key=True),
             Column('product', String(15), nullable=False),
             Column('version', String(10), nullable=False),
