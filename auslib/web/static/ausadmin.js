@@ -66,18 +66,6 @@ function submitPermissionForm(username, permissionForm, element) {
     }
 }
 
-function submitThrottleForm(rule_id, throttleForm){
-    url = getRuleUrl(rule_id);
-    throttle = $('[name*=throttle]', throttleForm).val();
-    data_version = $('[name*=data_version]', throttleForm).val();
-    data = {
-        'throttle': throttle,
-        'data_version': data_version
-    };
-    return $.ajax(url,{'type': 'post', 'data': data})
-        .error(handleError);
-}
-
 function submitRuleForm(ruleForm){
     rule_id = ruleForm.data('rule_id');
 
