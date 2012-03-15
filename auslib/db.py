@@ -672,19 +672,6 @@ class Permissions(AUSTable):
         )
         AUSTable.__init__(self)
 
-    def canEditUsers(self, username, transaction=None):
-        where=[
-            (self.username==username) &
-            ((self.permission=='admin') | (self.permission=='/users/:id/permissions/:permission'))
-        ]
-        if self.select(where=where, transaction=transaction):
-            return True
-        return False
-
-    def assertCanEdit(self, username, transaction=None):
-        if not self.canEditUsers(username, transaction=transaction):
-            raise PermissionDeniedError('%s is not allowed to change permissions' % username)
-
     def assertPermissionExists(self, permission):
         if permission not in self.allPermissions.keys():
             raise ValueError('Unknown permission "%s"' % permission)
@@ -699,7 +686,6 @@ class Permissions(AUSTable):
         return [r['username'] for r in res]
 
     def grantPermission(self, changed_by, username, permission, options=None, transaction=None):
-        self.assertCanEdit(changed_by, transaction=transaction)
         self.assertPermissionExists(permission)
         if options:
             self.assertOptionsExist(permission, options)
@@ -709,7 +695,6 @@ class Permissions(AUSTable):
         self.insert(changed_by=changed_by, transaction=transaction, **columns)
 
     def updatePermission(self, changed_by, username, permission, old_data_version, options=None, transaction=None):
-        self.assertCanEdit(changed_by, transaction=transaction)
         self.assertPermissionExists(permission)
         if options:
             self.assertOptionsExist(permission, options)
@@ -720,7 +705,6 @@ class Permissions(AUSTable):
         self.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version, transaction=transaction)
 
     def revokePermission(self, changed_by, username, permission, old_data_version, transaction=None):
-        self.assertCanEdit(changed_by, transaction=transaction)
         where = [self.username==username, self.permission==permission]
         self.delete(changed_by=changed_by, where=where, old_data_version=old_data_version, transaction=transaction)
 
