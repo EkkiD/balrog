@@ -557,7 +557,7 @@ class Rules(AUSTable):
     def getRuleById(self, rule_id, transaction=None):
         """ Returns the unique rule that matches the give rule_id """
         rules = self.select( where=[self.rule_id==rule_id], transaction=transaction)
-        found = rules.__len__()
+        found = len(rules)
         log.debug("Rules.getRuleById: Rules found: %s", found)
         if found > 1 or found == 0:
             return None

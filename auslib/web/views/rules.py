@@ -21,14 +21,12 @@ class RulesPageView(AdminView):
         forms = {}
 
         for rule in rules:
-            rule_id = rule['rule_id']
-            rule_id_str = str(rule_id)
-            forms[rule_id] = RuleForm(prefix=rule_id_str, throttle=rule['throttle'],  
+            _id = rule['rule_id']
+            forms[_id] = RuleForm(prefix=str(_id), throttle=rule['throttle'],  
                                     mapping=rule['mapping'], priority=rule['priority'], 
                                     data_version=rule['data_version'])
-            forms[rule_id].mapping.choices = [(item['name'],item['name']) for item in 
+            forms[_id].mapping.choices = [(item['name'],item['name']) for item in 
                                                 db.releases.getReleaseNames()]
-        log.debug(forms)
         return render_template('rules.html', rules=rules, forms=forms)
 
 class SingleRuleView(AdminView):
