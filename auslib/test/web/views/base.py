@@ -62,8 +62,8 @@ class ViewTest(unittest.TestCase):
     def _post(self, url, data={}):
         return self.client.post(url, data=data, environ_base=self._getAuth())
 
-    def _badAuthpost(self, url, data={}):
-        return self.client.post(url, data=data, environ_base=self._getAuth())
+    def _badAuthPost(self, url, data={}):
+        return self.client.post(url, data=data, environ_base=self._getBadAuth())
 
     def _put(self, url, data={}):
         return self.client.put(url, data=data, environ_base=self._getAuth())
