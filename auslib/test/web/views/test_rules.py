@@ -29,4 +29,9 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
         self.assertTrue('<input id="1-throttle" name="1-throttle" type="text" value="71" />' in ret.data, msg=ret.data)
         self.assertTrue('<input id="1-priority" name="1-priority" type="text" value="73" />' in ret.data, msg=ret.data)
 
+    def testBadAuthPost(self):
+        ret = self._badAuthPost('/rules/1', data=dict(throttle=100, mapping='c', priority=100, data_version=1))
+        self.assertEquals(ret.status_code, 401, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
+        self.assertTrue("not allowed to access" in ret.data, msg=ret.data)
+
         

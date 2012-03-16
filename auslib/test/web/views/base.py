@@ -55,8 +55,14 @@ class ViewTest(unittest.TestCase):
 
     def _getAuth(self, username='bill'):
         return {'REMOTE_USER': 'bill'}
+    
+    def _getBadAuth(self):
+        return {'REMOTE_USER': 'NotAuth!'}
 
     def _post(self, url, data={}):
+        return self.client.post(url, data=data, environ_base=self._getAuth())
+
+    def _badAuthpost(self, url, data={}):
         return self.client.post(url, data=data, environ_base=self._getAuth())
 
     def _put(self, url, data={}):
