@@ -30,6 +30,7 @@ class RulesPageView(AdminView):
         return render_template('rules.html', rules=rules, forms=forms)
 
 class SingleRuleView(AdminView):
+    """ /rules/<rule_id> """
 
     # Changed_by is available via the requirelogin decorator
     @requirelogin
@@ -41,7 +42,8 @@ class SingleRuleView(AdminView):
         try:
             form = RuleForm()
             what = dict(throttle=form.throttle.data,   
-                        mapping=form.mapping.data)
+                        mapping=form.mapping.data,
+                        priority=form.priority.data)
             log.debug("SingleRuleView: POST: old_data_version: %s", form.data_version.data)
             db.rules.updateRule(changed_by, rule_id, what, old_data_version=form.data_version.data)
             return Response(status=200)

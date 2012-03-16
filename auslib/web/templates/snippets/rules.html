@@ -72,6 +72,7 @@ Below is a complete list of all of the rules
             {{ row['headerArchitecture'] }}
         </td>
         <td id='Update_r{{ rule_id }}'>
+            {{ form.data_version()|safe }}
             <input type='submit' name='submit' value='Update' onclick='$("#rules_table").data("rule_id", "{{ rule_id }}");' />
         </td>
     </tr>
