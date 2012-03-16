@@ -4,19 +4,17 @@ Click through to access the data field
 {% endif %}
 <table>
     <tr>
-        {% for col in releases[0].keys() %}
-        <th>{{ col }}</th>
-        {% endfor %}
+        <th>Name</th>
+        <th>Product</th>
+        <th>Version</th>
+        <th>Data</th>
     </tr>
     {% for row in releases %}
     <tr>
-        {% for key,value in row.iteritems() %}
-            {% if key == 'data' %}
-                <td> <a href='releases/{{ row.name }}'>link</a></td>
-            {% else  %}
-                <td> {{ value }} </td>
-            {% endif %}
-        {% endfor %}
+        <td>{{ row['name'] }}</td>
+        <td>{{ row['product'] }}</td>
+        <td>{{ row['version'] }}</td>
+        <td> <a href='releases/{{ row.name }}'>link</a></td>
     </tr>
     {% endfor %}
 </table>
