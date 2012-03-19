@@ -1,7 +1,6 @@
 {% if releases %}
 Below is a complete list of all of the releases
 Click through to access the data field
-{% endif %}
 <table>
     <tr>
         <th>Name</th>
@@ -18,3 +17,6 @@ Click through to access the data field
     </tr>
     {% endfor %}
 </table>
+{% else %}
+There were no releases provided.
+{% endif %}
