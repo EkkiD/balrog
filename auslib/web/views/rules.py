@@ -9,10 +9,6 @@ from auslib.web.views.forms import RuleForm
 import logging
 log = logging.getLogger(__name__)
 
-
-# We should enforce one form per database row per page, so that we can keep the
-# data_version consistent on the page by updating the form.
-
 class RulesPageView(AdminView):
     """/rules.html"""
     def get(self):
@@ -32,7 +28,7 @@ class RulesPageView(AdminView):
 class SingleRuleView(AdminView):
     """ /rules/<rule_id> """
 
-    # Changed_by is available via the requirelogin decorator
+    # changed_by is available via the requirelogin decorator
     @requirelogin
     @requirepermission(options=[])
     def _post(self, rule_id, transaction, changed_by):

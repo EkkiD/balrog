@@ -8,6 +8,8 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
         ret = self._get('/rules.html')
         self.assertEquals(ret.status_code, 200)
         self.assertTrue("<form id='rules_table'" in ret.data, msg=ret.data)
+        self.assertTrue('<input id="1-throttle" name="1-throttle" type="text" value="100" />' in ret.data, msg=ret.data)
+        self.assertTrue('<input id="1-priority" name="1-priority" type="text" value="100" />' in ret.data, msg=ret.data)
 
     def testPost(self):
         # Make some changes to a rule
@@ -21,13 +23,6 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
         self.assertEquals(r[0]['throttle'], 71)
         self.assertEquals(r[0]['priority'], 73)
         self.assertEquals(r[0]['data_version'], 2)
-
-        # Assure the changes are reflected in the get
-        ret = self._get('/rules.html')
-        self.assertEquals(ret.status_code, 200)
-        self.assertTrue('<option selected="selected" value="d">d</option>' in ret.data, msg=ret.data)
-        self.assertTrue('<input id="1-throttle" name="1-throttle" type="text" value="71" />' in ret.data, msg=ret.data)
-        self.assertTrue('<input id="1-priority" name="1-priority" type="text" value="73" />' in ret.data, msg=ret.data)
 
     def testBadAuthPost(self):
         ret = self._badAuthPost('/rules/1', data=dict(throttle=100, mapping='c', priority=100, data_version=1))

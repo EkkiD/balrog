@@ -1,6 +1,5 @@
 {% if rules %}
 Below is a complete list of all of the rules
-{% endif %}
 <form id='rules_table' onsubmit='submitRuleForm($("#rules_table")); return false;'>
 <table>
     <tr>
@@ -79,3 +78,6 @@ Below is a complete list of all of the rules
     {% endfor %}
 </table>
 </form>
+{% else %}
+No rules were provided.
+{% endif %}
