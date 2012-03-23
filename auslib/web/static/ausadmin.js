@@ -10,6 +10,10 @@ function getRuleUrl(rule_id) {
     return SCRIPT_ROOT + '/rules/' + rule_id;
 }
 
+function getReleaseUrl(release) {
+    return SCRIPT_ROOT + '/releases/' + release;
+}
+
 function addNewPermission(username, permission, options, element) {
     url = getPermissionUrl(username, permission);
     data = {
@@ -84,6 +88,49 @@ function submitRuleForm(ruleForm){
     return $.ajax(url,{'type': 'post', 'data': data})
         .error(handleError);
 }
+
+function submitNewReleaseForm(releaseForm){
+    name = $('[name*=name]', releaseForm).val();
+
+    console.log(name);
+
+    var url = getReleaseUrl(name);
+
+    var data_version = $('[name*=data_version]', releaseForm).val();
+    var version = $('[name*=version]', releaseForm).val();
+    var product = $('[name*=product]', releaseForm).val();
+    var blob_field = $('[name*=blob]', releaseForm);
+
+    console.log(blob_field);
+    console.log(blob_field[0].files[0]);
+    file = blob_field[0].files[0];
+
+    var fr = new FileReader();
+    fr.onload = receivedText;
+    fr.readAsText(file);
+
+    function receivedText() {
+        result = fr.result;
+        console.log(result);
+        data = {
+            'name': name,
+            'version':version,
+            'product': product,
+            'blob': result,
+            'data_version': data_version
+        };
+        $.ajax(url, {'type': 'put', 'data': data})
+            .error(handleError
+                  ).success(function(data) {
+                      $.get(url, {'format': 'html'})
+                      .error(handleError
+                          ).success(function(data) {
+                              element.append(data);
+                          });
+                  });
+    }
+}
+
 
 function redirect(page, args) {
     window.location.assign(page + '?' + $.param(args));

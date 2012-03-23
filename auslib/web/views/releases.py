@@ -9,6 +9,7 @@ from mozilla_buildtools.retry import retry
 from auslib.blob import ReleaseBlobV1, CURRENT_SCHEMA_VERSION
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
+from auslib.web.views.forms import NewReleaseForm
 
 import logging
 log = logging.getLogger(__name__)
@@ -80,13 +81,28 @@ class ReleasesPageView(AdminView):
     """ /releases.html """
     def get(self):
         releases = db.releases.getReleases()
-        return render_template('releases.html', releases=releases)
+        form = NewReleaseForm(prefix="new_release")
+        return render_template('releases.html', releases=releases, addForm=form)
 
 class SingleReleaseView(AdminView):
     """ /releases/[release]"""
     def get(self, release):
-        release = db.releases.getReleaseBlob(release)
-        return jsonify(release)
+        release_blob = db.releases.getReleaseBlob(release)
+        return jsonify(release_blob)
+
+    @requirelogin
+    @requirepermission(options=[])
+    def _put(self, release, changed_by, transaction):
+        try:
+            form = NewReleaseForm()
+            retry(db.releases.addRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,), 
+                    kwargs=dict(name=release, product=form.product.data, version=form.version.data, blob=form.blob.data, changed_by=changed_by,  transaction=transaction))
+            return Response(status=201)
+        except ValueError, e:
+            return Response(status=400, response=e.args)
+        except Exception, e:
+            return Response(status=500, response=e.args)
+
 
 
 app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))

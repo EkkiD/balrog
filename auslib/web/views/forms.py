@@ -2,7 +2,9 @@ from simplejson import JSONDecodeError
 import simplejson as json
 import sys
 
-from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, IntegerField, SelectField
+from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, IntegerField, SelectField, FileField, file_required
+
+from auslib.blob import ReleaseBlobV1
 
 import logging
 log = logging.getLogger(__name__)
@@ -17,25 +19,37 @@ class DisableableTextInput(TextInput):
             kwargs['disabled'] = 'disabled'
         return TextInput.__call__(self, *args, **kwargs)
 
-class JSONTextField(TextField):
-    """TextField that parses incoming data as JSON."""
+def JSONCatch(func):
     def process_formdata(self, valuelist):
         if valuelist and valuelist[0]:
-            log.debug("JSONTextField.process_formdata: valuelist[0] is: %s", valuelist[0])
             try:
-                self.data = json.loads(valuelist[0])
+                func(self, valuelist)
             except JSONDecodeError, e:
                 # WTForms catches ValueError, which JSONDecodeError is a child
                 # of. Because of this, we need to wrap this error in something
                 # else in order for it to be properly raised.
-                log.debug('JSONTextField.process_formdata: Caught JSONDecodeError')
-                raise Exception("Couldn't process JSONTextField %s, caught JSONDecodeError" % self.name)
+                log.debug('JSONBlobFileField.process_formdata: Caught JSONDecodeError')
+                raise Exception("Couldn't process JSONBlobField %s, caught JSONDecodeError" % self.name)
                 klass, e, tb = sys.exc_info()
-                raise Exception, e, tb
         else:
-            log.debug('JSONTextField: No value list, setting self.data to {}')
+            log.debug('JSONBlobField: No value list, setting self.data to {}')
             self.data = {}
+    return process_formdata
 
+class JSONBlobFileField(FileField):
+    """FileField that parses incoming data as JSON and converts it into a blob"""
+    @JSONCatch
+    def process_formdata(self, valuelist):
+        blob = ReleaseBlobV1()
+        blob.loadJSON(valuelist[0])
+        self.data = blob
+
+class JSONTextField(TextField):
+    """TextField that parses incoming data as JSON."""
+    @JSONCatch
+    def process_formdata(self, valuelist):
+        self.data = json.loads(valuelist[0])
+   
 class DbEditableForm(Form):
     data_version = HiddenField('data_version', validators=[Required(), NumberRange()])
 
@@ -52,3 +66,9 @@ class RuleForm(DbEditableForm):
     throttle = IntegerField('Throttle', validators=[Required()])
     priority = IntegerField('Priority', validators=[Required()])
     mapping = SelectField('Mapping', validators=[Required()])
+
+class NewReleaseForm(DbEditableForm):
+    name = TextField('Name', validators=[Required()])
+    version = TextField('Version', validators=[Required()])
+    product = TextField('Product', validators=[Required()])
+    blob = JSONBlobFileField('Data', validators=[Required(), file_required()])

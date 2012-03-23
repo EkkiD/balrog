@@ -1,0 +1,39 @@
+2012-03-22 16:13:24,264:  * Running on http://127.0.0.1:9123/
+2012-03-22 16:13:24,265:  * Restarting with reloader
+2012-03-22 16:13:25,728: Releases.getReleases: Looking for releases with:
+2012-03-22 16:13:25,728: Releases.getReleases: name: None
+2012-03-22 16:13:25,728: Releases.getReleases: product: None
+2012-03-22 16:13:25,728: Releases.getReleases: version: None
+2012-03-22 16:13:27,606: 127.0.0.1 - - [22/Mar/2012 16:13:27] "GET /releases.html?new_release-name=abc&new_release-product=Firefox&new_release-version=12&new_release-blob=Firefox-mozilla-central-nightly-20110916071142.json&new_release-data_version=&submit=Submit%21 HTTP/1.1" 200 -
+2012-03-22 16:13:27,852: 127.0.0.1 - - [22/Mar/2012 16:13:27] "GET /static/ausadmin.css HTTP/1.1" 200 -
+2012-03-22 16:13:27,865: 127.0.0.1 - - [22/Mar/2012 16:13:27] "GET /static/ausadmin.js HTTP/1.1" 200 -
+2012-03-22 16:13:27,885: 127.0.0.1 - - [22/Mar/2012 16:13:27] "GET /static/jquery-1.6.4.js HTTP/1.1" 200 -
+2012-03-22 16:13:38,154: 127.0.0.1 - - [22/Mar/2012 16:13:38] "PUT /releases/abc HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/flask/app.py", line 1306, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/paste/auth/basic.py", line 95, in __call__
+    return self.application(environ, start_response)
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/flask/app.py", line 1294, in wsgi_app
+    response = self.make_response(self.handle_exception(e))
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/flask/app.py", line 1292, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/flask/app.py", line 1062, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/flask/app.py", line 1060, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/flask/app.py", line 1047, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/flask/views.py", line 56, in view
+    return self.dispatch_request(*args, **kwargs)
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/flask/views.py", line 112, in dispatch_request
+    return meth(*args, **kwargs)
+  File "/Users/edransch/mozilla/balrog/auslib/web/views/base.py", line 39, in put
+    return self._put(*args, transaction=trans, **kwargs)
+  File "/Users/edransch/mozilla/balrog/auslib/db.py", line 67, in __exit__
+    self.commit()
+  File "/Users/edransch/mozilla/balrog/auslib/db.py", line 87, in commit
+    self.trans.commit()
+  File "/Users/edransch/.virtualenvs/balrog/lib/python2.7/site-packages/sqlalchemy/engine/base.py", line 1929, in commit
+    raise exc.InvalidRequestError("This transaction is inactive")
+TransactionError: ('This transaction is inactive',)
