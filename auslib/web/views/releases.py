@@ -13,6 +13,8 @@ from auslib.web.views.base import requirelogin, requirepermission, AdminView
 import logging
 log = logging.getLogger(__name__)
 
+__all__ = ["SingleLocaleView"]
+
 class SingleLocaleView(AdminView):
     """/releases/[release]/builds/[platform]/[locale]"""
     def get(self, release, platform, locale):
@@ -33,7 +35,10 @@ class SingleLocaleView(AdminView):
             return Response(status=400, response=e.args)
 
         for rel in [release] + copyTo:
-            releaseObj = db.releases.getReleases(name=rel, transaction=transaction)[0]
+            try:
+                releaseObj = db.releases.getReleases(name=rel, transaction=transaction)[0]
+            except IndexError:
+                releaseObj = None
             # If the release already exists, do some verification on it, and possibly update
             # the version.
             if releaseObj:
@@ -76,20 +81,19 @@ class SingleLocaleView(AdminView):
             return Response(status=200)
 
 
-class ReleasesView(AdminView):
-    """/releases.html """
+class ReleasesPageView(AdminView):
+    """ /releases.html """
     def get(self):
-        limit = None
-        releases = db.releases.getReleases(limit=limit)
+        releases = db.releases.getReleases()
         return render_template('releases.html', releases=releases)
 
-class DataView(AdminView):
-    """releases/[release]"""
+class SingleReleaseView(AdminView):
+    """ /releases/[release]"""
     def get(self, release):
         release = db.releases.getReleaseBlob(release)
         return jsonify(release)
 
 
 app.add_url_rule('/releases/<release>/builds/<platform>/<locale>', view_func=SingleLocaleView.as_view('single_locale'))
-app.add_url_rule('/releases/<release>', view_func=DataView.as_view('release'))
-app.add_url_rule('/releases.html', view_func=ReleasesView.as_view('releases.html'))
+app.add_url_rule('/releases/<release>', view_func=SingleReleaseView.as_view('release'))
+app.add_url_rule('/releases.html', view_func=ReleasesPageView.as_view('releases.html'))

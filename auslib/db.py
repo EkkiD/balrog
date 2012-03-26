@@ -185,6 +185,7 @@ class AUSTable(object):
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
         query = self._selectStatement(**kwargs)
+        log.debug("AUSTable.select: Executing query: '%s'", query)
         if transaction:
             return transaction.execute(query).fetchall()
         else:
@@ -211,7 +212,9 @@ class AUSTable(object):
         data = columns.copy()
         if self.versioned:
             data['data_version'] = 1
-        ret = trans.execute(self._insertStatement(**data))
+        query = self._insertStatement(**data)
+        log.debug("AUSTable._prepareInsert: Executing query: '%s' with values: %s", query, data)
+        ret = trans.execute(query)
         if self.history:
             for q in self.history.forInsert(ret.inserted_primary_key, data, changed_by):
                 trans.execute(q)
@@ -239,7 +242,6 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareInsert(trans, changed_by, **columns)
-            trans.commit()
             return ret
 
     def _deleteStatement(self, where):
@@ -271,7 +273,9 @@ class AUSTable(object):
             where = copy(where)
             where.append(self.data_version==old_data_version)
 
-        ret = trans.execute(self._deleteStatement(where))
+        query = self._deleteStatement(where)
+        log.debug("AUSTable._prepareDelete: Executing query: '%s'", query)
+        ret = trans.execute(query)
         if ret.rowcount != 1:
             raise OutdatedDataError("Failed to delete row, old_data_version doesn't match current data_version")
         if self.history:
@@ -305,7 +309,6 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareDelete(trans, where, changed_by, old_data_version)
-            trans.commit()
             return ret
 
     def _updateStatement(self, where, what):
@@ -378,7 +381,6 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
-            trans.commit()
             return ret
 
 class History(AUSTable):
@@ -519,20 +521,20 @@ class Rules(AUSTable):
            For cases where a particular updateQuery channel has no
            fallback, fallbackChannel should match the channel from the query."""
         matchingRules = []
-        rules = self.select(
-            where=[
-                (self.throttle > 0) &
-                ((self.product==updateQuery['product']) | (self.product==None)) &
-                ((self.buildTarget==updateQuery['buildTarget']) | (self.buildTarget==None)) &
-                ((self.buildID==updateQuery['buildID']) | (self.buildID==None)) &
-                ((self.locale==updateQuery['locale']) | (self.locale==None)) &
-                ((self.osVersion==updateQuery['osVersion']) | (self.osVersion==None)) &
-                ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
-                ((self.distVersion==updateQuery['distVersion']) | (self.distVersion==None)) &
-                ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
-            ],
-            transaction=transaction
-        )
+        where=[
+            ((self.product==updateQuery['product']) | (self.product==None)) &
+            ((self.buildTarget==updateQuery['buildTarget']) | (self.buildTarget==None)) &
+            ((self.buildID==updateQuery['buildID']) | (self.buildID==None)) &
+            ((self.locale==updateQuery['locale']) | (self.locale==None)) &
+            ((self.osVersion==updateQuery['osVersion']) | (self.osVersion==None)) &
+            ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
+            ((self.distVersion==updateQuery['distVersion']) | (self.distVersion==None)) &
+            ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
+        ]
+        if updateQuery['force'] == False:
+            where.append(self.throttle > 0)
+        rules = self.select(where=where, transaction=transaction)
+        log.debug("Rules.getRulesMatchingQuery: where: %s" % where)
         log.debug("Rules.getRulesMatchingQuery: Raw matches:")
         for rule in rules:
             log.debug("Rules.getRulesMatchingQuery: %s", rule)
