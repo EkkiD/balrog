@@ -88,3 +88,7 @@ function submitRuleForm(ruleForm){
 function redirect(page, args) {
     window.location.assign(page + '?' + $.param(args));
 }
+
+$(document).ready(function() {
+        $('#rules_table').dataTable();
+} );
