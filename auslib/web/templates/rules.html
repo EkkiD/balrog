@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}AUS3 Admin - Rules{% endblock %}
 {% block head %}
+<script type='text/javascript' src='{{ url_for('static', filename='rules.js') }}'></script>
 {% endblock %}
 {% block content %}
 <div id='rules'>
-    {% include 'snippets/rules.html' %}
+    {% include 'fragments/rules.html' %}
 </div>
 {% endblock %}

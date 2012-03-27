@@ -41,7 +41,7 @@ class SingleRuleView(AdminView):
                         mapping=form.mapping.data,
                         priority=form.priority.data)
             log.debug("SingleRuleView: POST: old_data_version: %s", form.data_version.data)
-            db.rules.updateRule(changed_by, rule_id, what, old_data_version=form.data_version.data)
+            db.rules.updateRule(changed_by, rule_id, what, old_data_version=form.data_version.data, transaction=transaction)
             return Response(status=200)
         except ValueError, e:
             return Response(status=400, response=e.args)

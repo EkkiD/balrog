@@ -1,8 +1,8 @@
 {% if rules %}
 Below is a complete list of all of the rules
-<form id='rules_table' onsubmit='submitRuleForm($("#rules_table")); return false;'>
-<table>
-    <tr>
+<form id='rules_form' onsubmit='submitRuleForm($("#rules_table")); return false;'>
+<table id='rules_table'>
+    <thead> <tr>
         <th>Mapping</th>
         <th>Throttle</th>
         <th>Priority</th>
@@ -19,7 +19,8 @@ Below is a complete list of all of the rules
         <th>Update Type</th>
         <th>Header Architecture</th>
         <th>Update</th>
-    </tr>
+    </tr></thead>
+    <tbody>
     {% for row in rules %}
     <tr>
         {% set rule_id = row['rule_id'] %}
@@ -76,6 +77,7 @@ Below is a complete list of all of the rules
         </td>
     </tr>
     {% endfor %}
+    </tbody>
 </table>
 </form>
 {% else %}
