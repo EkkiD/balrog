@@ -1,0 +1,83 @@
+{% if rules %}
+Below is a complete list of all of the rules
+<form id='rules_table' onsubmit='submitRuleForm($("#rules_table")); return false;'>
+<table>
+    <tr>
+        <th>Mapping</th>
+        <th>Throttle</th>
+        <th>Priority</th>
+        <th>Product</th>
+        <th>Version</th>
+        <th>Build ID</th>
+        <th>Channel</th>
+        <th>Locale</th>
+        <th>Distribution</th>
+        <th>Build Target</th>
+        <th>OS Version</th>
+        <th>Dist Version</th>
+        <th>Comment</th>
+        <th>Update Type</th>
+        <th>Header Architecture</th>
+        <th>Update</th>
+    </tr>
+    {% for row in rules %}
+    <tr>
+        {% set rule_id = row['rule_id'] %}
+        {% set form = forms[rule_id] %}
+
+        <td id='mapping_r{{ rule_id }}'>
+            {{ form.mapping()|safe }}
+        </td>
+        <td id='throttle_r{{ rule_id }}'>
+            {{ form.throttle()|safe }}
+        </td>
+        <td id='priority_r{{ rule_id }}'>
+            {{ form.priority()|safe }}
+        </td>
+        <td id='product_r{{ rule_id }}'>
+            {{ row['product'] }}
+        </td>
+        <td id='version_r{{ rule_id }}'>
+            {{ row['version'] }}
+        </td>
+        <td id='buildID_r{{ rule_id }}'>
+            {{ row['buildID'] }}
+        </td>
+        <td id='channel_r{{ rule_id }}'>
+            {{ row['channel'] }}
+        </td>
+        <td id='locale_r{{ rule_id }}'>
+            {{ row['locale'] }}
+        </td>
+        <td id='distribution_r{{ rule_id }}'>
+            {{ row['distribution'] }}
+        </td>
+        <td id='buildTarget_r{{ rule_id }}'>
+            {{ row['buildTarget'] }}
+        </td>
+        <td id='osVersion_r{{ rule_id }}'>
+            {{ row['osVersion'] }}
+        </td>
+        <td id='distVersion_r{{ rule_id }}'>
+            {{ row['distVersion'] }}
+        </td>
+        <td id='comment_r{{ rule_id }}'>
+            {{ row['comment'] }}
+        </td>
+        <td id='update_type{{ rule_id }}'>
+            {{ row['update_type'] }}
+        </td>
+        <td id='header_arch_r{{ rule_id }}'>
+            {{ row['headerArchitecture'] }}
+        </td>
+        <td id='Update_r{{ rule_id }}'>
+            {{ form.data_version()|safe }}
+            <input type='submit' name='submit' value='Update' onclick='$("#rules_table").data("rule_id", "{{ rule_id }}");' />
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+</form>
+{% else %}
+No rules were provided.
+{% endif %}
