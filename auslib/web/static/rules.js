@@ -1,5 +1,31 @@
+/* Create an array with the values of all the input boxes in a column */
+$.fn.dataTableExt.afnSortData['dom-text'] = function  ( oSettings, iColumn )
+{
+        var aData = [];
+            $( 'td:eq('+iColumn+') input', oSettings.oApi._fnGetTrNodes(oSettings) ).each( function () {
+                        aData.push( this.value );
+                            } );
+                return aData;
+};
+
+/* Create an array with the values of all the select options in a column */
+$.fn.dataTableExt.afnSortData['dom-select'] = function  ( oSettings, iColumn )
+{
+        var aData = [];
+            $( 'td:eq('+iColumn+') select', oSettings.oApi._fnGetTrNodes(oSettings) ).each( function () {
+                        aData.push( $(this).val() );
+                            } );
+                return aData;
+};
+
 $(document).ready(function() {
-        $('#rules_table').dataTable();
+        $('#rules_table').dataTable({
+            "aoColumnDefs": [
+                { "sSortDataType": "dom-select", "aTargets":[0] },
+                { "sSortDataType": "dom-text", "aTargets":[1, 2] },
+                { "sType": "numeric", "aTargets": [1, 2] }
+            ]
+            });
 
         $("select","[id*=mapping]").combobox();
         
