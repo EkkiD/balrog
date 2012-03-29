@@ -31,7 +31,7 @@ $(document).ready(function() {
         
         //$( "#0-mapping" ).combobox();
         $( "#toggle" ).click(function() {
-            $( "select","[id*=-mapping]").toggle();
+            $( "select","[id*=mapping]").toggle();
         });
 } );
 

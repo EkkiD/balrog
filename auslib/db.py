@@ -83,6 +83,7 @@ class AUSTransaction(object):
             raise TransactionError, e, tb
 
     def commit(self):
+        log.debug("COMMIT TRANS")
         try:
             self.trans.commit()
         except:
@@ -242,6 +243,7 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareInsert(trans, changed_by, **columns)
+            trans.commit()
             return ret
 
     def _deleteStatement(self, where):
@@ -309,6 +311,7 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareDelete(trans, where, changed_by, old_data_version)
+            trans.commit()
             return ret
 
     def _updateStatement(self, where, what):
@@ -381,6 +384,7 @@ class AUSTable(object):
         else:
             trans = AUSTransaction(self.getEngine().connect())
             ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
+            trans.commit()
             return ret
 
 class History(AUSTable):
@@ -511,6 +515,11 @@ class Rules(AUSTable):
             return True
         if self._matchesRegex(ruleChannel, fallbackChannel):
             return True
+
+    def insertRule(self, changed_by, data, transaction=None):
+        ret = self.insert(changed_by=changed_by, transaction=transaction, **data)
+        rule_id = ret.inserted_primary_key
+        return rule_id
 
     def getOrderedRules(self, transaction=None):
         """Returns all of the rules, sorted in ascending order"""
