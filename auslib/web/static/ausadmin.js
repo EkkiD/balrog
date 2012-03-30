@@ -95,20 +95,20 @@ function redirect(page, args) {
 function submitNewRuleForm(ruleForm) {
     url = getBaseRuleUrl();
     data = {
-        'throttle': $('[name=new_rule-throttle]', ruleForm).val(),
-        'mapping': $('[name=new_rule-mapping]', ruleForm).val(),
-        'priority': $('[name=new_rule-priority]', ruleForm).val(),
-        'version' : $('[name=new_rule-version]', ruleForm).val(),
-        'build_id' : $('[name=new_rule-build_id]', ruleForm).val(),
-        'channel' : $('[name=new_rule-channel]', ruleForm).val(),
-        'locale' : $('[name=new_rule-locale]', ruleForm).val(),
-        'distribution' : $('[name=new_rule-distribution]', ruleForm).val(),
-        'build_target' : $('[name=new_rule-build_target]', ruleForm).val(),
-        'os_version' : $('[name=new_rule-os_version]', ruleForm).val(),
-        'dist_version' : $('[name=new_rule-dist_version]', ruleForm).val(),
-        'comment' : $('[name=new_rule-comment]', ruleForm).val(),
-        'update_type' : $('[name=new_rule-update_type]', ruleForm).val(),
-        'header_arch' : $('[name=new_rule-header_arch]', ruleForm).val()
+        'throttle': $('[name*=new_rule-throttle]', ruleForm).val(),
+        'mapping': $('[name*=new_rule-mapping]', ruleForm).val(),
+        'priority': $('[name*=new_rule-priority]', ruleForm).val(),
+        'version' : $('[name*=new_rule-version]', ruleForm).val(),
+        'build_id' : $('[name*=new_rule-build_id]', ruleForm).val(),
+        'channel' : $('[name*=new_rule-channel]', ruleForm).val(),
+        'locale' : $('[name*=new_rule-locale]', ruleForm).val(),
+        'distribution' : $('[name*=new_rule-distribution]', ruleForm).val(),
+        'build_target' : $('[name*=new_rule-build_target]', ruleForm).val(),
+        'os_version' : $('[name*=new_rule-os_version]', ruleForm).val(),
+        'dist_version' : $('[name*=new_rule-dist_version]', ruleForm).val(),
+        'comment' : $('[name*=new_rule-comment]', ruleForm).val(),
+        'update_type' : $('[name*=new_rule-update_type]', ruleForm).val(),
+        'header_arch' : $('[name*=new_rule-header_arch]', ruleForm).val()
     };
     $.ajax(url, {'type': 'post', 'data': data})
     .error(handleError

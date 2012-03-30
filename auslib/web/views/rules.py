@@ -34,7 +34,7 @@ class RulesPageView(AdminView):
                         comment = form.comment.data,
                         update_type = form.update_type.data,
                         header_arch = form.header_arch.data)
-            rule_id = db.rules.insertRule(changed_by, what, transaction=transaction)
+            rule_id = db.rules.insertRule(changed_by=changed_by, what=what, transaction=transaction)
             return Response(status=200, response=rule_id)
         except ValueError, e:
             return Response(status=400, response=e.args)

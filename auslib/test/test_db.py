@@ -88,10 +88,17 @@ class TestTableMixin(object):
         self.metadata = MetaData(self.engine)
         class TestTable(AUSTable):
             def __init__(self, metadata):
-                self.table = Table('test', metadata, Column('id', Integer, primary_key=True),
+                self.table = Table('test', metadata, Column('id', Integer, primary_key=True, autoincrement=True),
                                                      Column('foo', Integer))
                 AUSTable.__init__(self)
+        class TestAutoincrementTable(AUSTable):
+            def __init__(self, metadata):
+                self.table = Table('test-autoincrement', metadata, 
+                                                    Column('id', Integer, primary_key=True, autoincrement=True),
+                                                    Column('foo', Integer))
+                AUSTable.__init__(self)
         self.test = TestTable(self.metadata)
+        self.testAutoincrement = TestAutoincrementTable(self.metadata)
         self.metadata.create_all()
         self.test.t.insert().execute(id=1, foo=33, data_version=1)
         self.test.t.insert().execute(id=2, foo=22, data_version=1)
@@ -236,6 +243,14 @@ class TestHistoryTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
             ret = self.test.history.t.select().execute().fetchall()
             self.assertEquals(ret, [(1, 'george', 999, 4, None, None),
                                     (2, 'george', 1000, 4, 0, 1)])
+
+    def testHistoryUponAutoincrementInsert(self):
+        with mock.patch('time.time') as t:
+            t.return_value = 1.0
+            self.test.insert(changed_by='george', foo=0)
+            ret = self.test.history.t.select().execute().fetchall()
+            self.assertEquals(ret, [(1, 'george', 999, 5, None, None),
+                                    (2, 'george', 1000, 5, 0, 1)])
 
     def testHistoryUponDelete(self):
         with mock.patch('time.time') as t:

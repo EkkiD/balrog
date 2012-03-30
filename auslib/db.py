@@ -217,7 +217,11 @@ class AUSTable(object):
         log.debug("AUSTable._prepareInsert: Executing query: '%s' with values: %s", query, data)
         ret = trans.execute(query)
         if self.history:
+            log.debug(ret)
+            log.debug("Insert  into history table.")
+            log.debug(ret.inserted_primary_key)
             for q in self.history.forInsert(ret.inserted_primary_key, data, changed_by):
+                log.debug(trans)
                 trans.execute(q)
         return ret
 
@@ -235,6 +239,7 @@ class AUSTable(object):
 
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
+        log.debug(columns)
         if self.history and not changed_by:
             raise ValueError("changed_by must be passed for Tables that have history")
 
@@ -432,12 +437,17 @@ class History(AUSTable):
            time of insert."""
         primary_key_data = {}
         queries = []
+        log.debug(insertedKeys)
         for i in range(0, len(self.base_primary_key)):
             name = self.base_primary_key[i]
             primary_key_data[name] = insertedKeys[i]
+        log.debug(primary_key_data)
         ts = self.getTimestamp()
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts-1, **primary_key_data))
+        log.debug("Between appends")
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts, **columns))
+        log.debug("forInsert")
+        log.debug(queries)
         return queries
 
     def forDelete(self, rowData, changed_by):
@@ -516,8 +526,10 @@ class Rules(AUSTable):
         if self._matchesRegex(ruleChannel, fallbackChannel):
             return True
 
-    def insertRule(self, changed_by, data, transaction=None):
-        ret = self.insert(changed_by=changed_by, transaction=transaction, **data)
+    def insertRule(self, changed_by, what, transaction=None):
+        log.debug("insert rule")
+        log.debug(what)
+        ret = self.insert(changed_by=changed_by, transaction=transaction, **what)
         rule_id = ret.inserted_primary_key
         return rule_id
 
@@ -586,7 +598,6 @@ class Rules(AUSTable):
 class Releases(AUSTable):
     def __init__(self, metadata, dialect):
         self.table = Table('releases', metadata,
-            Column('release_id', Integer, primary_key=True, autoincrement=True),
             Column('name', String(100), primary_key=True),
             Column('product', String(15), nullable=False),
             Column('version', String(10), nullable=False),
