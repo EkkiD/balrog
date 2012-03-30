@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}AUS3 Admin - Rules{% endblock %}
+{% block head %}
+{% endblock %}
+{% block content %}
+    {% if rule %}
+        <div id='rule'>
+        <table id='rule_table'>
+            <thead> <tr>
+                <th>Mapping</th>
+                <th>Throttle</th>
+                <th>Priority</th>
+                <th>Product</th>
+                <th>Version</th>
+                <th>Build ID</th>
+                <th>Channel</th>
+                <th>Locale</th>
+                <th>Distribution</th>
+                <th>Build Target</th>
+                <th>OS Version</th>
+                <th>Dist Version</th>
+                <th>Comment</th>
+                <th>Update Type</th>
+                <th>Header Architecture</th>
+            </tr></thead>
+            <tbody>
+                <tr>
+                    {% set form = new_rule_form %}
+                    <td id='mapping'>
+                        {{ rule['mapping'] }}
+                    </td>
+                    <td id='throttle'>
+                        {{ rule['throttle'] }}
+                    </td>
+                    <td id='priority'>
+                        {{ rule['priority'] }}
+                    </td>
+                    <td id='product'>
+                        {{ rule['product'] }}
+                    </td>
+                    <td id='version'>
+                        {{ rule['version'] }}
+                    </td>
+                    <td id='buildID'>
+                        {{ rule['build_id'] }}
+                    </td>
+                    <td id='channel'>
+                        {{ rule['channel'] }}
+                    </td>
+                    <td id='locale'>
+                        {{ rule['locale'] }}
+                    </td>
+                    <td id='distribution'>
+                        {{ rule['distribution'] }}
+                    </td>
+                    <td id='buildTarget'>
+                        {{ rule['build_target'] }}
+                    </td>
+                    <td id='osVersion'>
+                        {{ rule['os_version'] }}
+                    </td>
+                    <td id='distVersion'>
+                        {{ rule['dist_version'] }}
+                    </td>
+                    <td id='comment'>
+                        {{ rule['comment'] }}
+                    </td>
+                    <td id='update_type'>
+                        {{ rule['update_type'] }}
+                    </td>
+                    <td id='header_arch'>
+                        {{ rule['header_arch'] }}
+                    </td>
+                </tr>
+            </tbody>
+        </div>
+    {% else %} 
+        This rule does not exist
+    {% endif %}
+{% endblock %}
