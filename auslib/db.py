@@ -219,7 +219,6 @@ class AUSTable(object):
         if self.history:
             log.debug(ret)
             log.debug("Insert  into history table.")
-            log.debug(ret.inserted_primary_key)
             for q in self.history.forInsert(ret.inserted_primary_key, data, changed_by):
                 log.debug(trans)
                 trans.execute(q)
@@ -437,16 +436,14 @@ class History(AUSTable):
            time of insert."""
         primary_key_data = {}
         queries = []
-        log.debug(insertedKeys)
         for i in range(0, len(self.base_primary_key)):
             name = self.base_primary_key[i]
             primary_key_data[name] = insertedKeys[i]
-        log.debug(primary_key_data)
+            columns[name]=insertedKeys[i]
+
         ts = self.getTimestamp()
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts-1, **primary_key_data))
-        log.debug("Between appends")
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts, **columns))
-        log.debug("forInsert")
         log.debug(queries)
         return queries
 

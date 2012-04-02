@@ -249,8 +249,8 @@ class TestHistoryTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
             t.return_value = 1.0
             self.test.insert(changed_by='george', foo=0)
             ret = self.test.history.t.select().execute().fetchall()
-            self.assertEquals(ret, [(1, 'george', 999, 5, None, None),
-                                    (2, 'george', 1000, 5, 0, 1)])
+            self.assertEquals(ret, [(1, 'george', 999, 4, None, None),
+                                    (2, 'george', 1000, 4, 0, 1)])
 
     def testHistoryUponDelete(self):
         with mock.patch('time.time') as t:
