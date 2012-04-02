@@ -83,7 +83,6 @@ class AUSTransaction(object):
             raise TransactionError, e, tb
 
     def commit(self):
-        log.debug("COMMIT TRANS")
         try:
             self.trans.commit()
         except:
@@ -217,10 +216,7 @@ class AUSTable(object):
         log.debug("AUSTable._prepareInsert: Executing query: '%s' with values: %s", query, data)
         ret = trans.execute(query)
         if self.history:
-            log.debug(ret)
-            log.debug("Insert  into history table.")
             for q in self.history.forInsert(ret.inserted_primary_key, data, changed_by):
-                log.debug(trans)
                 trans.execute(q)
         return ret
 
@@ -238,7 +234,6 @@ class AUSTable(object):
 
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
-        log.debug(columns)
         if self.history and not changed_by:
             raise ValueError("changed_by must be passed for Tables that have history")
 
@@ -444,7 +439,6 @@ class History(AUSTable):
         ts = self.getTimestamp()
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts-1, **primary_key_data))
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts, **columns))
-        log.debug(queries)
         return queries
 
     def forDelete(self, rowData, changed_by):
