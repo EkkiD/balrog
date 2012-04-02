@@ -112,7 +112,7 @@ function submitNewRuleForm(ruleForm) {
     };
     $.ajax(url, {'type': 'post', 'data': data})
     .error(handleError
-    );//.success(function(data) {
-      //  $.get(getRuleUrl(data), {'format': 'html'})
-      //  .error(handleError); });
+    ).success(function(data) {
+        window.location = getRuleUrl(data);
+    });
 }
