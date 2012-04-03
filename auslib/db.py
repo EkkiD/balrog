@@ -434,6 +434,7 @@ class History(AUSTable):
         for i in range(0, len(self.base_primary_key)):
             name = self.base_primary_key[i]
             primary_key_data[name] = insertedKeys[i]
+            # Make sure the primary keys are included in the second row as well
             columns[name]=insertedKeys[i]
 
         ts = self.getTimestamp()
