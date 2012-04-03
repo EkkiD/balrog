@@ -19,60 +19,64 @@ Below is a complete list of all of the rules
         <th>Update Type</th>
         <th>Header Architecture</th>
         <th>Update</th>
+        <th>Clone</th>
     </tr></thead>
         {% for row in rules %}
         <tr>
             {% set rule_id = row['rule_id'] %}
             {% set form = forms[rule_id] %}
 
-            <td id='mapping_r{{ rule_id }}'>
+            <td id='mapping_r{{ rule_id }}' name='mapping_r{{ rule_id }}'>
                 {{ form.mapping()|safe }}
             </td>
-            <td id='throttle_r{{ rule_id }}'>
+            <td id='throttle_r{{ rule_id }}' name='throttle_r{{ rule_id }}'>
                 {{ form.throttle()|safe }}
             </td>
-            <td id='priority_r{{ rule_id }}'>
+            <td id='priority_r{{ rule_id }}' name='priority_r{{ rule_id }}'>
                 {{ form.priority()|safe }}
             </td>
-            <td id='product_r{{ rule_id }}'>
-                {{ row['product'] }}
+            <td id='product_r{{ rule_id }}' name='product_r{{ rule_id }}'>
+                {{ form.product()|safe }}
             </td>
-            <td id='version_r{{ rule_id }}'>
-                {{ row['version'] }}
+            <td id='version_r{{ rule_id }}' name='version_r{{ rule_id }}'>
+                {{ form.version()|safe }}
             </td>
-            <td id='buildID_r{{ rule_id }}'>
-                {{ row['buildID'] }}
+            <td id='buildID_r{{ rule_id }}' name='buildID_r{{ rule_id }}'>
+                {{ form.build_id()|safe }}
             </td>
-            <td id='channel_r{{ rule_id }}'>
-                {{ row['channel'] }}
+            <td id='channel_r{{ rule_id }}' name='channel_r{{ rule_id }}'>
+                {{ form.channel()|safe }}
             </td>
-            <td id='locale_r{{ rule_id }}'>
-                {{ row['locale'] }}
+            <td id='locale_r{{ rule_id }}' name='locale_r{{ rule_id }}'>
+                {{ form.locale()|safe }}
             </td>
-            <td id='distribution_r{{ rule_id }}'>
-                {{ row['distribution'] }}
+            <td id='distribution_r{{ rule_id }}' name='distribution_r{{ rule_id }}'>
+                {{ form.distribution()|safe }}
             </td>
-            <td id='buildTarget_r{{ rule_id }}'>
-                {{ row['buildTarget'] }}
+            <td id='buildTarget_r{{ rule_id }}' name='buildTarget_r{{ rule_id }}'>
+                {{ form.build_target()|safe }}
             </td>
-            <td id='osVersion_r{{ rule_id }}'>
-                {{ row['osVersion'] }}
+            <td id='osVersion_r{{ rule_id }}' name='osVersion_r{{ rule_id }}'>
+                {{ form.os_version()|safe }}
             </td>
-            <td id='distVersion_r{{ rule_id }}'>
-                {{ row['distVersion'] }}
+            <td id='distVersion_r{{ rule_id }}' name='distVersion_r{{ rule_id }}'>
+                {{ form.dist_version()|safe }}
             </td>
-            <td id='comment_r{{ rule_id }}'>
-                {{ row['comment'] }}
+            <td id='comment_r{{ rule_id }}' name='comment_r{{ rule_id }}'>
+                {{ form.comment()|safe }}
             </td>
-            <td id='update_type{{ rule_id }}'>
-                {{ row['update_type'] }}
+            <td id='update_type{{ rule_id }}' name='update_type{{ rule_id }}'>
+                {{ form.update_type()|safe }}
             </td>
-            <td id='header_arch_r{{ rule_id }}'>
-                {{ row['headerArchitecture'] }}
+            <td id='header_arch_r{{ rule_id }}' name='header_arch_r{{ rule_id }}'>
+                {{ form.header_arch()|safe }}
             </td>
-            <td id='Update_r{{ rule_id }}'>
+            <td id='Update_r{{ rule_id }}' name='Update_r{{ rule_id }}'>
                 {{ form.data_version()|safe }}
-                <input type='submit' name='submit' value='Update' onclick='$("#rules_table").data("rule_id", "{{ rule_id }}");' />
+                <input type='submit' name='submit' value='Update' onclick='$("#rules_form").data("rule_id", "{{ rule_id }}");' />
+            </td>
+            <td id='Clone_r{{ rule_id }}' name='Clone_r{{ rule_id }}'>
+                <input type='button' name='clone' value='Clone' onclick='cloneRule($("#rules_form"), $("#new_rule_form"), "{{ rule_id }}")' />
             </td>
         </tr>
         {% endfor %}

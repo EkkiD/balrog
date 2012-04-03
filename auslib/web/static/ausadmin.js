@@ -82,6 +82,18 @@ function submitRuleForm(ruleForm){
         'throttle': throttle,
         'mapping': mapping,
         'priority': priority,
+        'product': $('[name='+rule_id+'-product]', ruleForm).val(),
+        'version' : $('[name='+rule_id+'-version]', ruleForm).val(),
+        'build_id' : $('[name='+rule_id+'-build_id]', ruleForm).val(),
+        'channel' : $('[name='+rule_id+'-channel]', ruleForm).val(),
+        'locale' : $('[name='+rule_id+'-locale]', ruleForm).val(),
+        'distribution' : $('[name='+rule_id+'-distribution]', ruleForm).val(),
+        'build_target' : $('[name='+rule_id+'-build_target]', ruleForm).val(),
+        'os_version' : $('[name='+rule_id+'-os_version]', ruleForm).val(),
+        'dist_version' : $('[name='+rule_id+'-dist_version]', ruleForm).val(),
+        'comment' : $('[name='+rule_id+'-comment]', ruleForm).val(),
+        'update_type' : $('[name='+rule_id+'-update_type]', ruleForm).val(),
+        'header_arch' : $('[name='+rule_id+'-header_arch]', ruleForm).val(),
         'data_version': data_version
     };
     return $.ajax(url,{'type': 'post', 'data': data})
@@ -98,6 +110,7 @@ function submitNewRuleForm(ruleForm) {
         'throttle': $('[name*=new_rule-throttle]', ruleForm).val(),
         'mapping': $('[name*=new_rule-mapping]', ruleForm).val(),
         'priority': $('[name*=new_rule-priority]', ruleForm).val(),
+        'product': $('[name*=new_rule-product]', ruleForm).val(),
         'version' : $('[name*=new_rule-version]', ruleForm).val(),
         'build_id' : $('[name*=new_rule-build_id]', ruleForm).val(),
         'channel' : $('[name*=new_rule-channel]', ruleForm).val(),
@@ -115,4 +128,22 @@ function submitNewRuleForm(ruleForm) {
     ).success(function(data) {
         window.location = getRuleUrl(data);
     });
+}
+
+function cloneRule(ruleForm, newRuleForm, ruleId){
+    $('[name*=new_rule-throttle]', newRuleForm).val($('[name='+ruleId+'-throttle]', ruleForm).val());
+    $('[name*=new_rule-mapping]', newRuleForm).combobox('newVal', $('[name='+ruleId+'-mapping]', ruleForm).val());
+    $('[name*=new_rule-priority]', newRuleForm).val($('[name='+ruleId+'-priority]', ruleForm).val());
+    $('[name*=new_rule-product]', newRuleForm).val($('[name='+ruleId+'-product]', ruleForm).val());
+    $('[name*=new_rule-version]', newRuleForm).val($('[name='+ruleId+'-version]', ruleForm).val());
+    $('[name*=new_rule-build_id]', newRuleForm).val($('[name='+ruleId+'-build_id]', ruleForm).val());
+    $('[name*=new_rule-channel]', newRuleForm).val($('[name='+ruleId+'-channel]', ruleForm).val());
+    $('[name*=new_rule-locale]', newRuleForm).val($('[name='+ruleId+'-locale]', ruleForm).val());
+    $('[name*=new_rule-distribution]', newRuleForm).val($('[name='+ruleId+'-distribution]', ruleForm).val());
+    $('[name*=new_rule-build_target]', newRuleForm).val($('[name='+ruleId+'-build_target]', ruleForm).val());
+    $('[name*=new_rule-os_version]', newRuleForm).val($('[name='+ruleId+'-os_version]', ruleForm).val());
+    $('[name*=new_rule-dist_version]', newRuleForm).val($('[name='+ruleId+'-dist_version]', ruleForm).val());
+    $('[name*=new_rule-comment]', newRuleForm).val($('[name='+ruleId+'-comment]', ruleForm).val());
+    $('[name*=new_rule-update_type]', newRuleForm).val($('[name='+ruleId+'-update_type]', ruleForm).val());
+    $('[name*=new_rule-header_arch]', newRuleForm).val($('[name='+ruleId+'-header_arch]', ruleForm).val());
 }
