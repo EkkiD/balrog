@@ -24,11 +24,13 @@ $(document).ready(function() {
                 { "sSortDataType": "dom-select", "aTargets":[0] },
                 { "sSortDataType": "dom-text", "aTargets":[1, 2] },
                 { "sType": "numeric", "aTargets": [1, 2] }
-            ]
+            ],
+            "fnDrawCallback": function(){
+                console.log("OnDraw");
+                $("select","[id*=mapping]").combobox();
+            }
             });
 
-        $("select","[id*=mapping]").combobox();
-        
         $( "#toggle" ).click(function() {
             $( "select","[id*=mapping]").toggle();
         });
@@ -110,6 +112,7 @@ $(document).ready(function() {
                 })
                 .removeClass( "ui-corner-all" )
                     .addClass( "ui-corner-right ui-button-icon" )
+
                     .click(function() {
                         // close if already visible
                         if ( input.autocomplete( "widget" ).is( ":visible" ) ) {
