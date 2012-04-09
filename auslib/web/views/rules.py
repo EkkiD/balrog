@@ -15,10 +15,14 @@ class RulesPageView(AdminView):
     @requirelogin
     @requirepermission(options=[])
     def _post(self, transaction, changed_by):
-        log.debug("RuleView: POST" )
         # a Post here creates a new rule
         try:
             form = NewRuleForm()
+            form.mapping.choices = [(item['name'],item['name']) for item in 
+                                                db.releases.getReleaseNames()]
+            if not form.validate():
+                log.debug(form.errors)
+                return Response(status=400, response=form.errors)
             what = dict(throttle=form.throttle.data,   
                         mapping=form.mapping.data,
                         priority=form.priority.data,
@@ -38,8 +42,6 @@ class RulesPageView(AdminView):
             return Response(status=200, response=rule_id)
         except ValueError, e:
             return Response(status=400, response=e.args)
-        except Exception, e:
-            return Response(status=500, response=e.args)
 
     def get(self):
         rules = db.rules.getOrderedRules()
@@ -89,6 +91,10 @@ class SingleRuleView(AdminView):
             return Response(status=404)
         try:
             form = RuleForm()
+            form.mapping.choices = [(item['name'],item['name']) for item in 
+                                                db.releases.getReleaseNames()]
+            if not form.validate():
+                return Response(status=400, response=form.errors)
             what = dict(throttle=form.throttle.data,   
                         mapping=form.mapping.data,
                         priority=form.priority.data,
@@ -109,8 +115,6 @@ class SingleRuleView(AdminView):
             return Response(status=200)
         except ValueError, e:
             return Response(status=400, response=e.args)
-        except Exception, e:
-            return Response(status=500, response=e.args)
 
 
 app.add_url_rule('/rules.html', view_func=RulesPageView.as_view('rules.html'))

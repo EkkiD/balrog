@@ -72,7 +72,7 @@ Below is a complete list of all of the rules
                 {{ form.header_arch()|safe }}
             </td>
             <td id='Update_r{{ rule_id }}' name='Update_r{{ rule_id }}'>
-                {{ form.data_version()|safe }}
+                {{ form.hidden_tag() }}
                 <input type='submit' name='submit' value='Update' onclick='$("#rules_form").data("rule_id", "{{ rule_id }}");' />
             </td>
             <td id='Clone_r{{ rule_id }}' name='Clone_r{{ rule_id }}'>

@@ -94,7 +94,8 @@ function submitRuleForm(ruleForm){
         'comment' : $('[name='+rule_id+'-comment]', ruleForm).val(),
         'update_type' : $('[name='+rule_id+'-update_type]', ruleForm).val(),
         'header_arch' : $('[name='+rule_id+'-header_arch]', ruleForm).val(),
-        'data_version': data_version
+        'data_version': data_version,
+        'csrf': $('[name='+rule_id+'-csrf]', ruleForm).val()
     };
     return $.ajax(url,{'type': 'post', 'data': data})
         .error(handleError);
@@ -121,7 +122,8 @@ function submitNewRuleForm(ruleForm) {
         'dist_version' : $('[name*=new_rule-dist_version]', ruleForm).val(),
         'comment' : $('[name*=new_rule-comment]', ruleForm).val(),
         'update_type' : $('[name*=new_rule-update_type]', ruleForm).val(),
-        'header_arch' : $('[name*=new_rule-header_arch]', ruleForm).val()
+        'header_arch' : $('[name*=new_rule-header_arch]', ruleForm).val(),
+        'csrf' : $('[name*=new_rule-csrf]', ruleForm).val()
     };
     $.ajax(url, {'type': 'post', 'data': data})
     .error(handleError

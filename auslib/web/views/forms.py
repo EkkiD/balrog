@@ -65,7 +65,7 @@ class RuleForm(DbEditableForm):
     update_type = TextField('Update Type', validators=[Required()] )
     header_arch = TextField('Header Architecture')
 
-class NewRuleForm(DbEditableForm):
+class NewRuleForm(Form):
     throttle = IntegerField('Throttle', validators=[Required()])
     priority = IntegerField('Priority', validators=[Required()])
     mapping = SelectField('Mapping', validators=[Required()])
