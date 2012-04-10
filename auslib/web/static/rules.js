@@ -1,3 +1,6 @@
+// These two functions use the example code from DataTables found here:
+// http://datatables.net/examples/plug-ins/dom_sort.html
+//
 /* Create an array with the values of all the input boxes in a column */
 $.fn.dataTableExt.afnSortData['dom-text'] = function  ( oSettings, iColumn )
 {
@@ -36,6 +39,11 @@ $(document).ready(function() {
         });
 } );
 
+
+
+// This is a modified version of the jquery-ui combobox example:
+// http://jqueryui.com/demos/autocomplete/#combobox
+//
 (function( $ ) {
     $.widget( "ui.combobox", {
         _create: function() {
@@ -135,6 +143,8 @@ $(document).ready(function() {
                 this.element.show();
                 $.Widget.prototype.destroy.call( this );
             },
+            // Change the value of the combobox:
+            // To do this we need to change both the select box and the input
             newVal: function(value) {
                 this.element.val(value);
                 this.input.val(value);

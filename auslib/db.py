@@ -518,7 +518,7 @@ class Rules(AUSTable):
         if self._matchesRegex(ruleChannel, fallbackChannel):
             return True
 
-    def insertRule(self, changed_by, what, transaction=None):
+    def addRule(self, changed_by, what, transaction=None):
         log.debug("insert rule")
         log.debug(what)
         ret = self.insert(changed_by=changed_by, transaction=transaction, **what)

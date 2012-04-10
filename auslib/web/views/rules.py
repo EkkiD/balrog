@@ -20,6 +20,7 @@ class RulesPageView(AdminView):
             form = RuleForm()
             form.mapping.choices = [(item['name'],item['name']) for item in 
                                                 db.releases.getReleaseNames()]
+            form.mapping.choices.insert(0, ('', 'NULL' ) )
             if not form.validate():
                 log.debug(form.errors)
                 return Response(status=400, response=form.errors)
@@ -38,7 +39,7 @@ class RulesPageView(AdminView):
                         comment = form.comment.data,
                         update_type = form.update_type.data,
                         header_arch = form.header_arch.data)
-            rule_id = db.rules.insertRule(changed_by=changed_by, what=what, transaction=transaction)
+            rule_id = db.rules.addRule(changed_by=changed_by, what=what, transaction=transaction)
             return Response(status=200, response=rule_id)
         except ValueError, e:
             return Response(status=400, response=e.args)
@@ -49,6 +50,7 @@ class RulesPageView(AdminView):
         new_rule_form = RuleForm(prefix="new_rule");
         new_rule_form.mapping.choices = [(item['name'],item['name']) for item in 
                                                 db.releases.getReleaseNames()]
+        new_rule_form.mapping.choices.insert(0, ('', 'NULL' ))
         forms = {}
 
         for rule in rules:
@@ -73,6 +75,7 @@ class RulesPageView(AdminView):
                                     data_version=rule['data_version'])
             forms[_id].mapping.choices = [(item['name'],item['name']) for item in 
                                                 db.releases.getReleaseNames()]
+            forms[_id].mapping.choices.insert(0, ('', 'NULL' ) )
         return render_template('rules.html', rules=rules, forms=forms, new_rule_form=new_rule_form)
 
 class SingleRuleView(AdminView):
@@ -93,6 +96,7 @@ class SingleRuleView(AdminView):
             form = EditRuleForm()
             form.mapping.choices = [(item['name'],item['name']) for item in 
                                                 db.releases.getReleaseNames()]
+            form.mapping.choices.insert(0, ('', 'NULL' ))
             if not form.validate():
                 return Response(status=400, response=form.errors)
             what = dict(throttle=form.throttle.data,   

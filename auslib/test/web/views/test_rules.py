@@ -13,7 +13,8 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
 
     def testPost(self):
         # Make some changes to a rule
-        ret = self._post('/rules/1', data=dict(throttle=71, mapping='d', priority=73, data_version=1))
+        ret = self._post('/rules/1', data=dict(throttle=71, mapping='d', priority=73, data_version=1,
+                                                product='Firefox', update_type='minor', channel='nightly'))
         self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
 
         # Assure the changes made it into the database
@@ -29,4 +30,30 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
         self.assertEquals(ret.status_code, 401, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
         self.assertTrue("not allowed to access" in ret.data, msg=ret.data)
 
-        
+    def testGetSingleRule(self):
+        ret = self._get('/rules/1')
+        self.assertEquals(ret.status_code, 200)
+        self.assertTrue("c" in ret.data, msg=ret.data)
+
+    def testNewRulePost(self):
+        ret = self._post('/rules.html', data=dict(throttle=31, mapping='c', priority=33, 
+                                                product='Firefox', update_type='minor', channel='nightly'))
+        self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
+        r = db.rules.t.select().where(db.rules.rule_id==ret.data).execute().fetchall()
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0]['mapping'], 'c')
+        self.assertEquals(r[0]['throttle'], 31)
+        self.assertEquals(r[0]['priority'], 33)
+        self.assertEquals(r[0]['data_version'], 1)
+
+    # A POST without the required fields shouldn't be valid
+    def testMissingFields(self):
+        ret = self._post('/rules.html', data=dict( ))
+        self.assertEquals(ret.status_code, 400, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
+        self.assertTrue('mapping' in  ret.data, msg=ret.data)
+        self.assertTrue('throttle' in  ret.data, msg=ret.data)
+        self.assertTrue('priority' in  ret.data, msg=ret.data)
+        self.assertTrue('product' in  ret.data, msg=ret.data)
+        self.assertTrue('update_type' in  ret.data, msg=ret.data)
+        self.assertTrue('channel' in  ret.data, msg=ret.data)
+
