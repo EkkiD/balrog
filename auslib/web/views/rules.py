@@ -4,7 +4,7 @@ from flask import render_template, request, Response, jsonify
 
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
-from auslib.web.views.forms import RuleForm, NewRuleForm
+from auslib.web.views.forms import EditRuleForm, RuleForm
 
 import logging
 log = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class RulesPageView(AdminView):
     def _post(self, transaction, changed_by):
         # a Post here creates a new rule
         try:
-            form = NewRuleForm()
+            form = RuleForm()
             form.mapping.choices = [(item['name'],item['name']) for item in 
                                                 db.releases.getReleaseNames()]
             if not form.validate():
@@ -46,7 +46,7 @@ class RulesPageView(AdminView):
     def get(self):
         rules = db.rules.getOrderedRules()
 
-        new_rule_form = NewRuleForm(prefix="new_rule");
+        new_rule_form = RuleForm(prefix="new_rule");
         new_rule_form.mapping.choices = [(item['name'],item['name']) for item in 
                                                 db.releases.getReleaseNames()]
         forms = {}
@@ -54,7 +54,7 @@ class RulesPageView(AdminView):
         for rule in rules:
             _id = rule['rule_id']
             log.debug(rule)
-            forms[_id] = RuleForm(prefix=str(_id), 
+            forms[_id] = EditRuleForm(prefix=str(_id), 
                                     throttle = rule['throttle'],  
                                     mapping = rule['mapping'], 
                                     priority = rule['priority'], 
@@ -90,7 +90,7 @@ class SingleRuleView(AdminView):
         if not db.rules.getRuleById(rule_id, transaction=transaction):
             return Response(status=404)
         try:
-            form = RuleForm()
+            form = EditRuleForm()
             form.mapping.choices = [(item['name'],item['name']) for item in 
                                                 db.releases.getReleaseNames()]
             if not form.validate():

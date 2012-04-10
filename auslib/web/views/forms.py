@@ -48,7 +48,7 @@ class NewPermissionForm(PermissionForm):
 class ExistingPermissionForm(PermissionForm):
     permission = TextField('Permission', validators=[Required()], widget=DisableableTextInput(disabled=True))
 
-class RuleForm(DbEditableForm):
+class RuleForm(Form):
     throttle = IntegerField('Throttle', validators=[Required()])
     priority = IntegerField('Priority', validators=[Required()])
     mapping = SelectField('Mapping', validators=[Required()])
@@ -65,19 +65,5 @@ class RuleForm(DbEditableForm):
     update_type = TextField('Update Type', validators=[Required()] )
     header_arch = TextField('Header Architecture')
 
-class NewRuleForm(Form):
-    throttle = IntegerField('Throttle', validators=[Required()])
-    priority = IntegerField('Priority', validators=[Required()])
-    mapping = SelectField('Mapping', validators=[Required()])
-    product = TextField('Product', validators=[Required()] )
-    version = TextField('Version')
-    build_id = TextField('BuildID')
-    channel = TextField('Channel', validators=[Required()] )
-    locale = TextField('Locale')
-    distribution = TextField('Distrubution')
-    build_target = TextField('Build Target')
-    os_version = TextField('OS Version')
-    dist_version = TextField('Dist Version')
-    comment = TextField('Comment')
-    update_type = TextField('Update Type', validators=[Required()] )
-    header_arch = TextField('Header Architecture')
+class EditRuleForm(RuleForm, DbEditableForm):
+    pass
