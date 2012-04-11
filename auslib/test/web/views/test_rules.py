@@ -50,10 +50,6 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
     def testMissingFields(self):
         ret = self._post('/rules.html', data=dict( ))
         self.assertEquals(ret.status_code, 400, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
-        self.assertTrue('mapping' in  ret.data, msg=ret.data)
         self.assertTrue('throttle' in  ret.data, msg=ret.data)
         self.assertTrue('priority' in  ret.data, msg=ret.data)
-        self.assertTrue('product' in  ret.data, msg=ret.data)
-        self.assertTrue('update_type' in  ret.data, msg=ret.data)
-        self.assertTrue('channel' in  ret.data, msg=ret.data)
 
