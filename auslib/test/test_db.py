@@ -508,6 +508,27 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
         expected = [('b', 'z', 'y', json.dumps(dict(name=2)), 2)]
         self.assertEquals(self.releases.t.select().where(self.releases.name=='b').execute().fetchall(), expected)
 
+    def testGetReleaseNames(self):
+        releases = self.releases.getReleaseNames()
+        expected = [ dict(name='a'), 
+                dict(name='ab'), 
+                dict(name='b'), 
+                dict(name='c')] 
+        self.assertEquals(releases, expected)
+
+        releases = self.releases.getReleaseNames(product='a')
+        expected = [ dict(name='a'), 
+                dict(name='ab')] 
+        self.assertEquals(releases, expected)
+
+        releases = self.releases.getReleaseNames(version='b')
+        expected = [ dict(name='b'), ] 
+        self.assertEquals(releases, expected)
+
+        releases = self.releases.getReleaseNames(product='a', version='b')
+        expected = [ ] 
+        self.assertEquals(releases, expected)
+
 class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
     """Tests for the Releases class that depend on version 1 of the blob schema."""
     def setUp(self):
