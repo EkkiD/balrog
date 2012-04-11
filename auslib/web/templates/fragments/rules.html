@@ -1,3 +1,37 @@
+<form id='new_rule_form' onsubmit='submitNewRuleForm($("#new_rule_form")); return false;'>
+<table id='new_rule_table'>
+    <thead> <tr>
+        <th>Mapping</th>
+        <th>Throttle</th>
+        <th>Priority</th>
+        <th>Product</th>
+        <th>Version</th>
+        <th>Build ID</th>
+        <th>Channel</th>
+        <th>Locale</th>
+        <th>Distribution</th>
+        <th>Build Target</th>
+        <th>OS Version</th>
+        <th>Dist Version</th>
+        <th>Comment</th>
+        <th>Update Type</th>
+        <th>Header Architecture</th>
+        <th>Update</th>
+    </tr></thead>
+    <tbody>
+        <tr>
+            {% set form = new_rule_form %}
+            {% set suffix = '_new' %}
+            {% include 'fragments/rule_form_row.html' %}
+            <td id='Update_new'>
+                <input type='submit' name='submit' value='Add' />
+            </td>
+        </tr>
+    </tbody>
+</table>
+</form>
+
+
 {% if rules %}
 Below is a complete list of all of the rules
 <form id='rules_form' onsubmit='submitRuleForm($("#rules_form")); return false;'>
@@ -25,57 +59,12 @@ Below is a complete list of all of the rules
         <tr>
             {% set rule_id = row['rule_id'] %}
             {% set form = forms[rule_id] %}
-
-            <td id='mapping_r{{ rule_id }}' name='mapping_r{{ rule_id }}'>
-                {{ form.mapping()|safe }}
-            </td>
-            <td id='throttle_r{{ rule_id }}' name='throttle_r{{ rule_id }}'>
-                {{ form.throttle()|safe }}
-            </td>
-            <td id='priority_r{{ rule_id }}' name='priority_r{{ rule_id }}'>
-                {{ form.priority()|safe }}
-            </td>
-            <td id='product_r{{ rule_id }}' name='product_r{{ rule_id }}'>
-                {{ form.product()|safe }}
-            </td>
-            <td id='version_r{{ rule_id }}' name='version_r{{ rule_id }}'>
-                {{ form.version()|safe }}
-            </td>
-            <td id='buildID_r{{ rule_id }}' name='buildID_r{{ rule_id }}'>
-                {{ form.build_id()|safe }}
-            </td>
-            <td id='channel_r{{ rule_id }}' name='channel_r{{ rule_id }}'>
-                {{ form.channel()|safe }}
-            </td>
-            <td id='locale_r{{ rule_id }}' name='locale_r{{ rule_id }}'>
-                {{ form.locale()|safe }}
-            </td>
-            <td id='distribution_r{{ rule_id }}' name='distribution_r{{ rule_id }}'>
-                {{ form.distribution()|safe }}
-            </td>
-            <td id='buildTarget_r{{ rule_id }}' name='buildTarget_r{{ rule_id }}'>
-                {{ form.build_target()|safe }}
-            </td>
-            <td id='osVersion_r{{ rule_id }}' name='osVersion_r{{ rule_id }}'>
-                {{ form.os_version()|safe }}
-            </td>
-            <td id='distVersion_r{{ rule_id }}' name='distVersion_r{{ rule_id }}'>
-                {{ form.dist_version()|safe }}
-            </td>
-            <td id='comment_r{{ rule_id }}' name='comment_r{{ rule_id }}'>
-                {{ form.comment()|safe }}
-            </td>
-            <td id='update_type{{ rule_id }}' name='update_type{{ rule_id }}'>
-                {{ form.update_type()|safe }}
-            </td>
-            <td id='header_arch_r{{ rule_id }}' name='header_arch_r{{ rule_id }}'>
-                {{ form.header_arch()|safe }}
-            </td>
-            <td id='Update_r{{ rule_id }}' name='Update_r{{ rule_id }}'>
-                {{ form.hidden_tag() }}
+            {% set suffix = '_r'~rule_id %}
+            {% include 'fragments/rule_form_row.html' %}
+            <td id='Update{{ suffix }}' name='Update{{ suffix }}'>
                 <input type='submit' name='submit' value='Update' onclick='$("#rules_form").data("rule_id", "{{ rule_id }}");' />
             </td>
-            <td id='Clone_r{{ rule_id }}' name='Clone_r{{ rule_id }}'>
+            <td id='Clone{{ suffix }}' name='Clone{{ suffix }}'>
                 <input type='button' name='clone' value='Clone' onclick='cloneRule($("#rules_form"), $("#new_rule_form"), "{{ rule_id }}")' />
             </td>
         </tr>
