@@ -372,6 +372,33 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
         ]
         self.assertEquals(rules, expected)
 
+    def testGetRuleById(self):
+        rule = self._stripNullColumns([self.paths.getRuleById(1)])
+        expected = [dict(rule_id=1, priority=100, throttle=100, version='3.5', buildTarget='d', mapping='c', update_type='z', data_version=1)]
+        self.assertEquals(rule, expected)
+
+    def testAddRule(self):
+        what = dict(throttle=11,   
+                    mapping='c',
+                    update_type='z',
+                    priority=60)
+        rule_id = self.paths.addRule(changed_by='bill', what=what) 
+        rule_id = rule_id[0]
+        rule = self._stripNullColumns([self.paths.getRuleById(rule_id)])
+        what['rule_id']=rule_id
+        what['data_version']=1
+        what = [what]
+        self.assertEquals(rule, what)
+
+    def testUpdateRule(self):
+        what = self.paths.getRuleById(1)
+        #self.assertTrue(False, what[0])
+        what['mapping'] = 'd'
+        self.paths.updateRule(changed_by='bill', rule_id=1, what=what, old_data_version=1)
+        rule = self._stripNullColumns([self.paths.getRuleById(1)])
+        expected = [dict(rule_id=1, priority=100, throttle=100, version='3.5', buildTarget='d', mapping='d', update_type='z', data_version=1)]
+        self.assertEquals(rule, expected)
+
 
 class TestRulesSpecial(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
     def setUp(self):
