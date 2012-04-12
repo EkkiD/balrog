@@ -10,7 +10,7 @@ import logging
 log = logging.getLogger(__name__)
 
 class RulesPageView(AdminView):
-    """/rules.html"""
+    """/rules"""
     # changed_by is available via the requirelogin decorator
     @requirelogin
     @requirepermission(options=[])
@@ -121,5 +121,5 @@ class SingleRuleView(AdminView):
             return Response(status=400, response=e.args)
 
 
-app.add_url_rule('/rules.html', view_func=RulesPageView.as_view('rules.html'))
+app.add_url_rule('/rules', view_func=RulesPageView.as_view('rules.html'))
 app.add_url_rule('/rules/<rule_id>', view_func=SingleRuleView.as_view('setrule'))

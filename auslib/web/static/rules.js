@@ -152,58 +152,52 @@ $(document).ready(function() {
     });
 }( jQuery ));
 
+function getRuleUrl(rule_id) {
+    return SCRIPT_ROOT + '/rules/' + rule_id;
+}
+function getBaseRuleUrl() {
+    return SCRIPT_ROOT + '/rules';
+}
+
+function getData(prefix, ruleForm){
+    data = {
+        'throttle': $('[name='+prefix+'-throttle]', ruleForm).val(),
+        'mapping': $('[name='+prefix+'-mapping]', ruleForm).val(),
+        'priority': $('[name='+prefix+'-priority]', ruleForm).val(),
+        'product': $('[name='+prefix+'-product]', ruleForm).val(),
+        'version' : $('[name='+prefix+'-version]', ruleForm).val(),
+        'build_id' : $('[name='+prefix+'-build_id]', ruleForm).val(),
+        'channel' : $('[name='+prefix+'-channel]', ruleForm).val(),
+        'locale' : $('[name='+prefix+'-locale]', ruleForm).val(),
+        'distribution' : $('[name='+prefix+'-distribution]', ruleForm).val(),
+        'build_target' : $('[name='+prefix+'-build_target]', ruleForm).val(),
+        'os_version' : $('[name='+prefix+'-os_version]', ruleForm).val(),
+        'dist_version' : $('[name='+prefix+'-dist_version]', ruleForm).val(),
+        'comment' : $('[name='+prefix+'-comment]', ruleForm).val(),
+        'update_type' : $('[name='+prefix+'-update_type]', ruleForm).val(),
+        'header_arch' : $('[name='+prefix+'-header_arch]', ruleForm).val(),
+        'data_version': $('[name='+prefix+'-data_version]', ruleForm).val(),
+        'csrf': $('[name='+prefix+'-csrf]', ruleForm).val()
+    };
+    return data;
+}
+
 function submitRuleForm(ruleForm){
     rule_id = ruleForm.data('rule_id');
 
     url = getRuleUrl(rule_id);
+    data = getData(rule_id, ruleForm);
 
-    throttle = $('[name='+rule_id+'-throttle]', ruleForm).val();
-    data_version = $('[name='+rule_id+'-data_version]', ruleForm).val();
-    mapping = $('[name='+rule_id+'-mapping]', ruleForm).val();
-    priority = $('[name='+rule_id+'-priority]', ruleForm).val();
-    data = {
-        'throttle': throttle,
-        'mapping': mapping,
-        'priority': priority,
-        'product': $('[name='+rule_id+'-product]', ruleForm).val(),
-        'version' : $('[name='+rule_id+'-version]', ruleForm).val(),
-        'build_id' : $('[name='+rule_id+'-build_id]', ruleForm).val(),
-        'channel' : $('[name='+rule_id+'-channel]', ruleForm).val(),
-        'locale' : $('[name='+rule_id+'-locale]', ruleForm).val(),
-        'distribution' : $('[name='+rule_id+'-distribution]', ruleForm).val(),
-        'build_target' : $('[name='+rule_id+'-build_target]', ruleForm).val(),
-        'os_version' : $('[name='+rule_id+'-os_version]', ruleForm).val(),
-        'dist_version' : $('[name='+rule_id+'-dist_version]', ruleForm).val(),
-        'comment' : $('[name='+rule_id+'-comment]', ruleForm).val(),
-        'update_type' : $('[name='+rule_id+'-update_type]', ruleForm).val(),
-        'header_arch' : $('[name='+rule_id+'-header_arch]', ruleForm).val(),
-        'data_version': data_version,
-        'csrf': $('[name='+rule_id+'-csrf]', ruleForm).val()
-    };
+    console.log(data);
     return $.ajax(url,{'type': 'post', 'data': data})
         .error(handleError);
 }
 
 function submitNewRuleForm(ruleForm) {
     url = getBaseRuleUrl();
-    data = {
-        'throttle': $('[name*=new_rule-throttle]', ruleForm).val(),
-        'mapping': $('[name*=new_rule-mapping]', ruleForm).val(),
-        'priority': $('[name*=new_rule-priority]', ruleForm).val(),
-        'product': $('[name*=new_rule-product]', ruleForm).val(),
-        'version' : $('[name*=new_rule-version]', ruleForm).val(),
-        'build_id' : $('[name*=new_rule-build_id]', ruleForm).val(),
-        'channel' : $('[name*=new_rule-channel]', ruleForm).val(),
-        'locale' : $('[name*=new_rule-locale]', ruleForm).val(),
-        'distribution' : $('[name*=new_rule-distribution]', ruleForm).val(),
-        'build_target' : $('[name*=new_rule-build_target]', ruleForm).val(),
-        'os_version' : $('[name*=new_rule-os_version]', ruleForm).val(),
-        'dist_version' : $('[name*=new_rule-dist_version]', ruleForm).val(),
-        'comment' : $('[name*=new_rule-comment]', ruleForm).val(),
-        'update_type' : $('[name*=new_rule-update_type]', ruleForm).val(),
-        'header_arch' : $('[name*=new_rule-header_arch]', ruleForm).val(),
-        'csrf' : $('[name*=new_rule-csrf]', ruleForm).val()
-    };
+    data = getData('new_rule', ruleForm);
+
+    console.log(data);
     $.ajax(url, {'type': 'post', 'data': data})
     .error(handleError
     ).success(function(data) {

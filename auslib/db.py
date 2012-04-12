@@ -519,11 +519,8 @@ class Rules(AUSTable):
             return True
 
     def addRule(self, changed_by, what, transaction=None):
-        log.debug("insert rule")
-        log.debug(what)
         ret = self.insert(changed_by=changed_by, transaction=transaction, **what)
-        rule_id = ret.inserted_primary_key
-        return rule_id
+        return ret.inserted_primary_key
 
     def getOrderedRules(self, transaction=None):
         """Returns all of the rules, sorted in ascending order"""
@@ -573,11 +570,9 @@ class Rules(AUSTable):
         """ Returns the unique rule that matches the give rule_id """
         rules = self.select( where=[self.rule_id==rule_id], transaction=transaction)
         found = len(rules)
-        log.debug("Rules.getRuleById: Rules found: %s", found)
         if found > 1 or found == 0:
+            log.debug("Rules.getRuleById: Found %s rules, should have been 1", found)
             return None
-        log.debug("Rules.getRuleById: Match:")
-        log.debug("Rules.getRuleById: %s", rules[0])
         return rules[0]
 
     def updateRule(self, changed_by, rule_id, what, old_data_version, transaction=None):

@@ -6,13 +6,6 @@ function getPermissionUrl(username, permission) {
     return SCRIPT_ROOT + '/users/' + username + '/permissions/' + permission;
 }
 
-function getRuleUrl(rule_id) {
-    return SCRIPT_ROOT + '/rules/' + rule_id;
-}
-function getBaseRuleUrl() {
-    return SCRIPT_ROOT + '/rules.html';
-}
-
 function addNewPermission(username, permission, options, element) {
     url = getPermissionUrl(username, permission);
     data = {
