@@ -21,7 +21,7 @@ class RulesPageView(AdminView):
         # a Post here creates a new rule
         form = RuleForm()
         releaseNames = retry(db.releases.getReleaseNames, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
-        form.mapping.choices = [(item['name'],item['name']) for item in releaseName]
+        form.mapping.choices = [(item['name'],item['name']) for item in releaseNames]
         form.mapping.choices.insert(0, ('', 'NULL' ) )
         if not form.validate():
             log.debug(form.errors)

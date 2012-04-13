@@ -30,10 +30,6 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
         self.assertEquals(ret.status_code, 401, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
         self.assertTrue("not allowed to access" in ret.data, msg=ret.data)
 
-#    def testBadDataVersionPost(self):
-#        ret = self._post('/rules/1', data=dict(throttle=100, mapping='c', priority=100, data_version=0))
-#        self.assertTrue("old_data_version doesn't match current data_version" in ret.data, msg=ret.data)
-
     def testGetSingleRule(self):
         ret = self._get('/rules/1')
         self.assertEquals(ret.status_code, 200)
