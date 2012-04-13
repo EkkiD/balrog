@@ -5,7 +5,7 @@ from auslib.test.web.views.base import ViewTest, JSONTestMixin, HTMLTestMixin
 
 class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
     def testGetRules(self):
-        ret = self._get('/rules.html')
+        ret = self._get('/rules')
         self.assertEquals(ret.status_code, 200)
         self.assertTrue("<form id='rules_form'" in ret.data, msg=ret.data)
         self.assertTrue('<input id="1-throttle" name="1-throttle" type="text" value="100" />' in ret.data, msg=ret.data)
@@ -30,13 +30,17 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
         self.assertEquals(ret.status_code, 401, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
         self.assertTrue("not allowed to access" in ret.data, msg=ret.data)
 
+#    def testBadDataVersionPost(self):
+#        ret = self._post('/rules/1', data=dict(throttle=100, mapping='c', priority=100, data_version=0))
+#        self.assertTrue("old_data_version doesn't match current data_version" in ret.data, msg=ret.data)
+
     def testGetSingleRule(self):
         ret = self._get('/rules/1')
         self.assertEquals(ret.status_code, 200)
         self.assertTrue("c" in ret.data, msg=ret.data)
 
     def testNewRulePost(self):
-        ret = self._post('/rules.html', data=dict(throttle=31, mapping='c', priority=33, 
+        ret = self._post('/rules', data=dict(throttle=31, mapping='c', priority=33, 
                                                 product='Firefox', update_type='minor', channel='nightly'))
         self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
         r = db.rules.t.select().where(db.rules.rule_id==ret.data).execute().fetchall()
@@ -48,7 +52,7 @@ class TestRulesAPI_JSON(ViewTest, HTMLTestMixin):
 
     # A POST without the required fields shouldn't be valid
     def testMissingFields(self):
-        ret = self._post('/rules.html', data=dict( ))
+        ret = self._post('/rules', data=dict( ))
         self.assertEquals(ret.status_code, 400, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
         self.assertTrue('throttle' in  ret.data, msg=ret.data)
         self.assertTrue('priority' in  ret.data, msg=ret.data)

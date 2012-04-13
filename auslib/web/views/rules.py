@@ -2,6 +2,9 @@ import simplejson as json
 
 from flask import render_template, request, Response, jsonify
 
+from mozilla_buildtools.retry import retry
+from sqlalchemy.exc import SQLAlchemyError
+
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
 from auslib.web.views.forms import EditRuleForm, RuleForm
@@ -16,40 +19,40 @@ class RulesPageView(AdminView):
     @requirepermission(options=[])
     def _post(self, transaction, changed_by):
         # a Post here creates a new rule
-        try:
-            form = RuleForm()
-            form.mapping.choices = [(item['name'],item['name']) for item in 
-                                                db.releases.getReleaseNames()]
-            form.mapping.choices.insert(0, ('', 'NULL' ) )
-            if not form.validate():
-                log.debug(form.errors)
-                return Response(status=400, response=form.errors)
-            what = dict(throttle=form.throttle.data,   
-                        mapping=form.mapping.data,
-                        priority=form.priority.data,
-                        product = form.product.data,
-                        version = form.version.data,
-                        build_id = form.build_id.data,
-                        channel = form.channel.data,
-                        locale = form.locale.data,
-                        distribution = form.distribution.data,
-                        build_target = form.build_target.data,
-                        os_version = form.os_version.data,
-                        dist_version = form.dist_version.data,
-                        comment = form.comment.data,
-                        update_type = form.update_type.data,
-                        header_arch = form.header_arch.data)
-            rule_id = db.rules.addRule(changed_by=changed_by, what=what, transaction=transaction)
-            return Response(status=200, response=rule_id)
-        except ValueError, e:
-            return Response(status=400, response=e.args)
+        form = RuleForm()
+        form.mapping.choices = [(item['name'],item['name']) for item in 
+                db.releases.getReleaseNames()]
+        form.mapping.choices.insert(0, ('', 'NULL' ) )
+        if not form.validate():
+            log.debug(form.errors)
+            return Response(status=400, response=form.errors)
+        what = dict(throttle=form.throttle.data,   
+                mapping=form.mapping.data,
+                priority=form.priority.data,
+                product = form.product.data,
+                version = form.version.data,
+                build_id = form.build_id.data,
+                channel = form.channel.data,
+                locale = form.locale.data,
+                distribution = form.distribution.data,
+                build_target = form.build_target.data,
+                os_version = form.os_version.data,
+                dist_version = form.dist_version.data,
+                comment = form.comment.data,
+                update_type = form.update_type.data,
+                header_arch = form.header_arch.data)
+        rule_id = retry(db.rules.addRule, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
+                kwargs=dict(changed_by=changed_by, what=what, transaction=transaction))
+        return Response(status=200, response=rule_id)
 
     def get(self):
         rules = db.rules.getOrderedRules()
 
+        releaseNames = db.releases.getReleaseNames()
+
         new_rule_form = RuleForm(prefix="new_rule");
         new_rule_form.mapping.choices = [(item['name'],item['name']) for item in 
-                                                db.releases.getReleaseNames()]
+                releaseNames]
         new_rule_form.mapping.choices.insert(0, ('', 'NULL' ))
         forms = {}
 
@@ -74,7 +77,7 @@ class RulesPageView(AdminView):
                                     header_arch = rule['headerArchitecture'],
                                     data_version=rule['data_version'])
             forms[_id].mapping.choices = [(item['name'],item['name']) for item in 
-                                                db.releases.getReleaseNames()]
+                                                releaseNames]
             forms[_id].mapping.choices.insert(0, ('', 'NULL' ) )
         return render_template('rules.html', rules=rules, forms=forms, new_rule_form=new_rule_form)
 
@@ -83,7 +86,9 @@ class SingleRuleView(AdminView):
 
     def get(self, rule_id):
         rule = db.rules.getRuleById(rule_id);
-        return render_template('single_rule.html', rule=rule)
+        if not rule:
+            return Response(status=404, response="Requested rule does not exist")
+        return render_template('fragments/single_rule.html', rule=rule)
 
     # changed_by is available via the requirelogin decorator
     @requirelogin
@@ -92,33 +97,31 @@ class SingleRuleView(AdminView):
         # Verify that the rule_id exists.
         if not db.rules.getRuleById(rule_id, transaction=transaction):
             return Response(status=404)
-        try:
-            form = EditRuleForm()
-            form.mapping.choices = [(item['name'],item['name']) for item in 
-                                                db.releases.getReleaseNames()]
-            form.mapping.choices.insert(0, ('', 'NULL' ))
-            if not form.validate():
-                return Response(status=400, response=form.errors)
-            what = dict(throttle=form.throttle.data,   
-                        mapping=form.mapping.data,
-                        priority=form.priority.data,
-                        product = form.product.data,
-                        version = form.version.data,
-                        build_id = form.build_id.data,
-                        channel = form.channel.data,
-                        locale = form.locale.data,
-                        distribution = form.distribution.data,
-                        build_target = form.build_target.data,
-                        os_version = form.os_version.data,
-                        dist_version = form.dist_version.data,
-                        comment = form.comment.data,
-                        update_type = form.update_type.data,
-                        header_arch = form.header_arch.data)
-            log.debug("SingleRuleView: POST: old_data_version: %s", form.data_version.data)
-            db.rules.updateRule(changed_by, rule_id, what, old_data_version=form.data_version.data, transaction=transaction)
-            return Response(status=200)
-        except ValueError, e:
-            return Response(status=400, response=e.args)
+        form = EditRuleForm()
+        form.mapping.choices = [(item['name'],item['name']) for item in 
+                                            db.releases.getReleaseNames()]
+        form.mapping.choices.insert(0, ('', 'NULL' ))
+        if not form.validate():
+            return Response(status=400, response=form.errors)
+        what = dict(throttle=form.throttle.data,   
+                    mapping=form.mapping.data,
+                    priority=form.priority.data,
+                    product = form.product.data,
+                    version = form.version.data,
+                    build_id = form.build_id.data,
+                    channel = form.channel.data,
+                    locale = form.locale.data,
+                    distribution = form.distribution.data,
+                    build_target = form.build_target.data,
+                    os_version = form.os_version.data,
+                    dist_version = form.dist_version.data,
+                    comment = form.comment.data,
+                    update_type = form.update_type.data,
+                    header_arch = form.header_arch.data)
+        log.debug("SingleRuleView: POST: old_data_version: %s", form.data_version.data)
+        retry(db.rules.updateRule, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
+                  kwargs=dict(changed_by=changed_by, rule_id=rule_id, what=what, old_data_version=form.data_version.data, transaction=transaction))
+        return Response(status=200)
 
 
 app.add_url_rule('/rules', view_func=RulesPageView.as_view('rules.html'))
