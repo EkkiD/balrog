@@ -20,7 +20,7 @@ class RulesPageView(AdminView):
     def _post(self, transaction, changed_by):
         # a Post here creates a new rule
         form = RuleForm()
-        releaseNames = retry(db.releases.getReleaseNames(), sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+        releaseNames = retry(db.releases.getReleaseNames, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
         form.mapping.choices = [(item['name'],item['name']) for item in releaseName]
         form.mapping.choices.insert(0, ('', 'NULL' ) )
         if not form.validate():
@@ -48,7 +48,7 @@ class RulesPageView(AdminView):
     def get(self):
         rules = db.rules.getOrderedRules()
 
-        releaseNames = retry(db.releases.getReleaseNames(), sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+        releaseNames = retry(db.releases.getReleaseNames, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
 
         new_rule_form = RuleForm(prefix="new_rule");
         new_rule_form.mapping.choices = [(item['name'],item['name']) for item in 
@@ -99,7 +99,7 @@ class SingleRuleView(AdminView):
             return Response(status=404)
         form = EditRuleForm()
 
-        releaseNames = retry(db.releases.getReleaseNames(), sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+        releaseNames = retry(db.releases.getReleaseNames, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
 
         form.mapping.choices = [(item['name'],item['name']) for item in releaseNames]
         form.mapping.choices.insert(0, ('', 'NULL' ))
