@@ -85,10 +85,35 @@ class SingleRuleView(AdminView):
     """ /rules/<rule_id> """
 
     def get(self, rule_id):
-        rule = db.rules.getRuleById(rule_id);
+        rule = retry(db.rules.getRuleById, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
+                kwargs=dict(rule_id=rule_id))
         if not rule:
             return Response(status=404, response="Requested rule does not exist")
-        return render_template('fragments/single_rule.html', rule=rule)
+
+        releaseNames = retry(db.releases.getReleaseNames, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+
+        form = EditRuleForm(prefix=str(rule_id), 
+                throttle = rule['throttle'],  
+                mapping = rule['mapping'], 
+                priority = rule['priority'], 
+                product = rule['product'],
+                version = rule['version'],
+                build_id = rule['buildID'],
+                channel = rule['channel'],
+                locale = rule['locale'],
+                distribution = rule['distribution'],
+                build_target = rule['buildTarget'],
+                os_version = rule['osVersion'],
+                dist_version = rule['distVersion'],
+                comment = rule['comment'],
+                update_type = rule['update_type'],
+                header_arch = rule['headerArchitecture'],
+                data_version=rule['data_version'])
+        form.mapping.choices = [(item['name'],item['name']) for item in 
+                releaseNames]
+        form.mapping.choices.insert(0, ('', 'NULL' ) )
+
+        return render_template('fragments/single_rule.html', rule=rule, form=form)
 
     # changed_by is available via the requirelogin decorator
     @requirelogin

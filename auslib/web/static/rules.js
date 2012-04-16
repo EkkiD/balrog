@@ -25,7 +25,7 @@ $(document).ready(function() {
         $('#rules_table').dataTable({
             "aoColumnDefs": [
                 { "sSortDataType": "dom-select", "aTargets":[0] },
-                { "sSortDataType": "dom-text", "aTargets":[1, 2] },
+                { "sSortDataType": "dom-text", "aTargets":[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
                 { "sType": "numeric", "aTargets": [1, 2] }
             ],
             "fnDrawCallback": function(){
@@ -193,15 +193,21 @@ function submitRuleForm(ruleForm){
         .error(handleError);
 }
 
-function submitNewRuleForm(ruleForm) {
+function submitNewRuleForm(ruleForm, table) {
     url = getBaseRuleUrl();
     data = getData('new_rule', ruleForm);
 
     console.log(data);
     $.ajax(url, {'type': 'post', 'data': data})
-    .error(handleError
-    ).success(function(data) {
-        window.location = getRuleUrl(data);
+    .error(handleError)
+    .success(function(data) {
+        $.get(getRuleUrl(data))
+        .error(handleError)
+        .success(function(data) {
+            console.log("Got rule:");
+            table.append(data);
+            table.dataTable().fnDraw();
+        });
     });
 }
 
