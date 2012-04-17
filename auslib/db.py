@@ -49,30 +49,43 @@ class AUSTransaction(object):
        @param conn: connection object to perform the transaction on
        @type conn: sqlalchemy.engine.base.Connection
     """
-    def __init__(self, conn):
-        self.conn = conn
-        self.trans = conn.begin()
+    def __init__(self, engine):
+        self.engine = engine
+        self.conn = self.engine.connect()
+        self.trans = self.conn.begin()
 
     def __enter__(self):
         return self
 
     def __exit__(self, *exc):
-        # If something that executed in the context raised an Exception,
-        # rollback and re-raise it.
-        if exc[0]:
-            self.rollback()
-            raise exc[0], exc[1], exc[2]
-        # Also need to check for exceptions during commit!
         try:
-            self.commit()
-        except:
-            self.rollback()
-            raise
+            # If something that executed in the context raised an Exception,
+            # rollback and re-raise it.
+            log.debug("AUSTransaction.__exit__: exc is: %s" % str(exc))
+            if exc[0]:
+                self.rollback()
+                raise exc[0], exc[1], exc[2]
+            # Also need to check for exceptions during commit!
+            try:
+                self.commit()
+            except:
+                self.rollback()
+                raise
+        finally:
+            # Always make sure the connection is closed, bug 740360
+            self.close()
+
+    def close(self):
+        # For some reason, sometimes the connection appears to close itself...
+        if not self.conn.closed:
+            self.conn.close()
 
     def execute(self, statement):
         try:
+            log.debug("AUSTransaction.execute: Attempting to execute %s" % statement)
             return self.conn.execute(statement)
         except:
+            log.debug("AUSTransaction.execute: Caught exception")
             # We want to raise our own Exception, so that errors are easily
             # caught by consumers. The dance below lets us do that without
             # losing the original Traceback, which will be much more
@@ -240,10 +253,8 @@ class AUSTable(object):
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
         else:
-            trans = AUSTransaction(self.getEngine().connect())
-            ret = self._prepareInsert(trans, changed_by, **columns)
-            trans.commit()
-            return ret
+            with AUSTransaction(self.getEngine()) as trans:
+                return self._prepareInsert(trans, changed_by, **columns)
 
     def _deleteStatement(self, where):
         """Create a DELETE statement for this table.
@@ -308,10 +319,8 @@ class AUSTable(object):
         if transaction:
             return self._prepareDelete(transaction, where, changed_by, old_data_version)
         else:
-            trans = AUSTransaction(self.getEngine().connect())
-            ret = self._prepareDelete(trans, where, changed_by, old_data_version)
-            trans.commit()
-            return ret
+            with AUSTransaction(self.getEngine()) as trans:
+                return self._prepareDelete(trans, where, changed_by, old_data_version)
 
     def _updateStatement(self, where, what):
         """Create an UPDATE statement for this table
@@ -381,10 +390,8 @@ class AUSTable(object):
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
         else:
-            trans = AUSTransaction(self.getEngine().connect())
-            ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
-            trans.commit()
-            return ret
+            with AUSTransaction(self.getEngine()) as trans:
+                return self._prepareUpdate(trans, where, what, changed_by, old_data_version)
 
 class History(AUSTable):
     """Represents a history table that may be attached to another AUSTable.
@@ -643,12 +650,17 @@ class Releases(AUSTable):
         # Raises DuplicateDataError if the release already exists.
         self.insert(changed_by=changed_by, transaction=transaction, **columns)
 
-    def updateRelease(self, name, changed_by, old_data_version, product=None, version=None, transaction=None):
+    def updateRelease(self, name, changed_by, old_data_version, product=None, version=None, blob=None, transaction=None):
         what = {}
         if product:
             what['product'] = product
         if version:
             what['version'] = version
+        if blob:
+            if not blob.isValid():
+                log.debug("Releases.updateRelease: invalid blob is %s" % blob)
+                raise ValueError("Release blob is invalid.")
+            what['data'] = blob.getJSON()
         log.debug("Releases.updateRelease: Updating %s with %s", name, what)
         self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
 
@@ -666,6 +678,8 @@ class Releases(AUSTable):
                     }
                 }
             }
+        if platform not in releaseBlob['platforms']:
+            releaseBlob['platforms'][platform] = dict(locales=dict())
         releaseBlob['platforms'][platform]['locales'][locale] = blob
         if not releaseBlob.isValid():
             log.debug("Releases.addLocaleToRelease: invalid releaseBlob is %s" % releaseBlob)
@@ -747,6 +761,15 @@ class Permissions(AUSTable):
     def revokePermission(self, changed_by, username, permission, old_data_version, transaction=None):
         where = [self.username==username, self.permission==permission]
         self.delete(changed_by=changed_by, where=where, old_data_version=old_data_version, transaction=transaction)
+
+    def getPermission(self, username, permission, transaction=None):
+        try:
+            row = self.select(where=[self.username==username, self.permission==permission], transaction=transaction)[0]
+            if row['options']:
+                row['options'] = json.loads(row['options'])
+            return row
+        except IndexError:
+            return {}
 
     def getUserPermissions(self, username, transaction=None):
         rows = self.select(columns=[self.permission, self.options, self.data_version], where=[self.username==username], transaction=transaction)
@@ -830,7 +853,7 @@ class AUSDatabase(object):
         self.metadata.bind = None
 
     def begin(self):
-        return AUSTransaction(self.engine.connect())
+        return AUSTransaction(self.engine)
 
     @property
     def rules(self):
