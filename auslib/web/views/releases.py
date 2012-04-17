@@ -2,7 +2,7 @@ import simplejson as json
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from flask import render_template, request, Response, jsonify
+from flask import render_template, request, Response, jsonify, make_response
 
 from mozilla_buildtools.retry import retry
 
@@ -22,7 +22,7 @@ class SingleLocaleView(AdminView):
         return jsonify(locale)
 
     @requirelogin
-    @requirepermission()
+    @requirepermission('/releases/:name/builds/:platform/:locale')
     def _put(self, release, platform, locale, changed_by, transaction):
         new = True
         try:
@@ -31,7 +31,8 @@ class SingleLocaleView(AdminView):
             version = request.form['version']
             localeBlob = json.loads(request.form['details'])
             copyTo = json.loads(request.form.get('copyTo', '[]'))
-        except (KeyError, json.JSONDecodeError), e:
+        # XXX: use JSONDecodeError instead of ValueError when the servers support it
+        except (KeyError, ValueError), e:
             return Response(status=400, response=e.args)
 
         for rel in [release] + copyTo:
@@ -75,11 +76,12 @@ class SingleLocaleView(AdminView):
                 old_data_version = db.releases.getReleases(name=rel, transaction=transaction)[0]['data_version']
                 db.releases.addLocaleToRelease(rel, platform, locale, localeBlob, old_data_version, changed_by, transaction)
             retry(updateLocale, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+        new_data_version = db.releases.getReleases(name=release, transaction=transaction)[0]['data_version']
         if new:
-            return Response(status=201)
+            status = 201
         else:
-            return Response(status=200)
-
+            status = 200
+        return make_response(json.dumps(dict(new_data_version=new_data_version)), status)
 
 class ReleasesPageView(AdminView):
     """ /releases.html """

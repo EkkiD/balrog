@@ -59,6 +59,13 @@ class TestAUSTransaction(unittest.TestCase, MemoryDatabaseMixin):
         ret = self.table.select().execute().fetchall()
         self.assertEquals(ret, [(1, 33), (2, 22), (3, 11)])
 
+    # bug 740360
+    def testContextManagerClosesConnection(self):
+        with AUSTransaction(self.metadata.bind.connect()) as trans:
+            self.assertEqual(trans.conn.closed, False, "Connection closed at start of transaction, expected it to be open.")
+            trans.execute(self.table.insert(values=dict(id=5, foo=41)))
+        self.assertEqual(trans.conn.closed, True, "Connection not closed after __exit__ is called")
+
 class TestAUSTransactionRequiresRealFile(unittest.TestCase, NamedFileDatabaseMixin):
     def setUp(self):
         NamedFileDatabaseMixin.setUp(self)
@@ -141,6 +148,19 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         self.assertEquals(len(ret), 4)
         self.assertEquals(ret[-1], (4, 0, 1))
 
+    def testInsertClosesConnectionOnImplicitTransaction(self):
+        with mock.patch('sqlalchemy.engine.base.Connection.close') as close:
+            self.test.insert(changed_by='bob', id=5, foo=1)
+            self.assertTrue(close.called, "Connection.close() never called by insert()")
+
+    def testInsertClosesConnectionOnImplicitTransactionWithError(self):
+        with mock.patch('sqlalchemy.engine.base.Connection.close') as close:
+            try:
+                self.test.insert(changed_by='bob', id=1, foo=1)
+            except:
+                pass
+            self.assertTrue(close.called, "Connection.close() never called by insert()")
+
     def testDelete(self):
         ret = self.test.delete(changed_by='bill', where=[self.test.id==1, self.test.foo==33],
             old_data_version=1)
@@ -151,6 +171,11 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
         self.assertRaises(OutdatedDataError, self.test.delete, changed_by='bill',
             where=[self.test.id==3], old_data_version=1)
 
+    def testDeleteClosesConnectionOnImplicitTransaction(self):
+        with mock.patch('sqlalchemy.engine.base.Connection.close') as close:
+            self.test.delete(changed_by='bill', where=[self.test.id==1], old_data_version=1)
+            self.assertTrue(close.called, "Connection.close() never called by delete()")
+
     def testUpdate(self):
         ret = self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=123),
             old_data_version=1)
@@ -160,6 +185,11 @@ class TestAUSTable(unittest.TestCase, TestTableMixin, MemoryDatabaseMixin):
     def testUpdateFailsOnVersionMismatch(self):
         self.assertRaises(OutdatedDataError, self.test.update, changed_by='bill',
             where=[self.test.id==3], what=dict(foo=99), old_data_version=1)
+
+    def testUpdateClosesConnectionOnImplicitTransaction(self):
+        with mock.patch('sqlalchemy.engine.base.Connection.close') as close:
+            self.test.update(changed_by='bob', where=[self.test.id==1], what=dict(foo=432), old_data_version=1)
+            self.assertTrue(close.called, "Connection.close() never called by update()")
 
     def testWherePkMatches(self):
         expected = self.test.id==1
@@ -462,8 +492,9 @@ class TestReleases(unittest.TestCase, MemoryDatabaseMixin):
         self.assertRaises(TransactionError, self.releases.addRelease, name='a', product='a', version='a', blob=blob, changed_by='bill')
 
     def testUpdateRelease(self):
-        self.releases.updateRelease(name='b', product='z', version='y', changed_by='bill', old_data_version=1)
-        expected = [('b', 'z', 'y', json.dumps(dict(name=2)), 2)]
+        blob = ReleaseBlobV1(name='a')
+        self.releases.updateRelease(name='b', product='z', version='y', blob=blob, changed_by='bill', old_data_version=1)
+        expected = [('b', 'z', 'y', json.dumps(dict(name='a')), 2)]
         self.assertEquals(self.releases.t.select().where(self.releases.name=='b').execute().fetchall(), expected)
 
 class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
@@ -481,7 +512,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
             "locales": {
                 "l": {
                     "complete": {
-                        "filesize": "1234"
+                        "filesize": 1234
                     }
                 }
             }
@@ -512,7 +543,7 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
                 },
                 "l": {
                     "complete": {
-                        "filesize": "1234"
+                        "filesize": 1234
                     }
                 }
             }
@@ -566,6 +597,36 @@ class TestReleasesSchema1(unittest.TestCase, MemoryDatabaseMixin):
 """)
         self.assertEqual(ret, expected)
 
+    def testAddLocaleToReleaseSecondPlatform(self):
+        blob = dict(complete=dict(filesize=324))
+        self.releases.addLocaleToRelease(name='a', platform='q', locale='l', blob=blob, old_data_version=1, changed_by='bill')
+        ret = json.loads(select([self.releases.data]).where(self.releases.name=='a').execute().fetchone()[0])
+        expected = json.loads("""
+{
+    "name": "b",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": 1234
+                    }
+                }
+            }
+        },
+        "q": {
+            "locales": {
+                "l": {
+                    "complete": {
+                        "filesize": 324
+                    }
+                }
+            }
+        }
+    }
+}
+""")
+
 class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
     def setUp(self):
         MemoryDatabaseMixin.setUp(self)
@@ -608,6 +669,18 @@ class TestPermissions(unittest.TestCase, MemoryDatabaseMixin):
 
     def testGetAllUsers(self):
         self.assertEquals(self.permissions.getAllUsers(), ['bill', 'bob', 'cathy'])
+
+    def testGetPermission(self):
+        expected = {
+            'permission': '/releases/:name',
+            'username': 'bob',
+            'options': dict(product='fake'),
+            'data_version': 1
+        }
+        self.assertEquals(self.permissions.getPermission('bob', '/releases/:name'), expected)
+
+    def testGetPermissionNonExistant(self):
+        self.assertEquals(self.permissions.getPermission('bob', '/rules'), {})
 
     def testGetUserPermissions(self):
         expected = {'/users/:id/permissions/:permission': dict(options=None, data_version=1),
