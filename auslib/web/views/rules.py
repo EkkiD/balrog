@@ -56,7 +56,7 @@ class RulesAPIView(AdminView):
     """/rules"""
     # changed_by is available via the requirelogin decorator
     @requirelogin
-    @requirepermission(options=[])
+    @requirepermission('/rules', options=[])
     def _post(self, transaction, changed_by):
         # a Post here creates a new rule
         form = RuleForm()
@@ -124,7 +124,7 @@ class SingleRuleView(AdminView):
 
     # changed_by is available via the requirelogin decorator
     @requirelogin
-    @requirepermission(options=[])
+    @requirepermission('/rules/:id', options=[])
     def _post(self, rule_id, transaction, changed_by):
         # Verify that the rule_id exists.
         if not db.rules.getRuleById(rule_id, transaction=transaction):
