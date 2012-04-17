@@ -24,12 +24,12 @@ $.fn.dataTableExt.afnSortData['dom-select'] = function  ( oSettings, iColumn )
 $(document).ready(function() {
         $('#rules_table').dataTable({
             "aoColumnDefs": [
+                // The aTarget numbers refer to the columns in the dataTable on which to apply the functions
                 { "sSortDataType": "dom-select", "aTargets":[0] },
                 { "sSortDataType": "dom-text", "aTargets":[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
                 { "sType": "numeric", "aTargets": [1, 2] }
             ],
             "fnDrawCallback": function(){
-                console.log("OnDraw");
                 $("select","[id*=mapping]").combobox();
             }
             });
@@ -158,9 +158,6 @@ function getRuleUrl(rule_id) {
 function getRuleAPIUrl() {
     return SCRIPT_ROOT + '/rules';
 }
-function getBaseRuleUrl() {
-    return SCRIPT_ROOT + '/rules.html';
-}
 
 function getData(prefix, ruleForm){
     data = {
@@ -207,7 +204,6 @@ function submitNewRuleForm(ruleForm, table) {
         $.get(getRuleUrl(data))
         .error(handleError)
         .success(function(data) {
-            console.log("Got rule:");
             table.append(data);
             table.dataTable().fnDraw();
         });
