@@ -13,38 +13,7 @@ import logging
 log = logging.getLogger(__name__)
 
 class RulesPageView(AdminView):
-    """/rules"""
-    # changed_by is available via the requirelogin decorator
-    @requirelogin
-    @requirepermission(options=[])
-    def _post(self, transaction, changed_by):
-        # a Post here creates a new rule
-        form = RuleForm()
-        releaseNames = retry(db.releases.getReleaseNames, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
-        form.mapping.choices = [(item['name'],item['name']) for item in releaseNames]
-        form.mapping.choices.insert(0, ('', 'NULL' ) )
-        if not form.validate():
-            log.debug(form.errors)
-            return Response(status=400, response=form.errors)
-        what = dict(throttle=form.throttle.data,   
-                mapping=form.mapping.data,
-                priority=form.priority.data,
-                product = form.product.data,
-                version = form.version.data,
-                build_id = form.build_id.data,
-                channel = form.channel.data,
-                locale = form.locale.data,
-                distribution = form.distribution.data,
-                build_target = form.build_target.data,
-                os_version = form.os_version.data,
-                dist_version = form.dist_version.data,
-                comment = form.comment.data,
-                update_type = form.update_type.data,
-                header_arch = form.header_arch.data)
-        rule_id = retry(db.rules.addRule, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
-                kwargs=dict(changed_by=changed_by, what=what, transaction=transaction))
-        return Response(status=200, response=rule_id)
-
+    """/rules.html"""
     def get(self):
         rules = db.rules.getOrderedRules()
 
@@ -58,6 +27,7 @@ class RulesPageView(AdminView):
 
         for rule in rules:
             _id = rule['rule_id']
+            log.debug("auslib.web.views.rules.RulesPageView: ")
             log.debug(rule)
             forms[_id] = EditRuleForm(prefix=str(_id), 
                                     throttle = rule['throttle'],  
@@ -80,6 +50,43 @@ class RulesPageView(AdminView):
                                                 releaseNames]
             forms[_id].mapping.choices.insert(0, ('', 'NULL' ) )
         return render_template('rules.html', rules=rules, forms=forms, new_rule_form=new_rule_form)
+
+
+class RulesAPIView(AdminView):
+    """/rules"""
+    # changed_by is available via the requirelogin decorator
+    @requirelogin
+    @requirepermission(options=[])
+    def _post(self, transaction, changed_by):
+        # a Post here creates a new rule
+        form = RuleForm()
+        releaseNames = retry(db.releases.getReleaseNames, sleeptime=5, retry_exceptions=(SQLAlchemyError,))
+        form.mapping.choices = [(item['name'],item['name']) for item in releaseNames]
+        form.mapping.choices.insert(0, ('', 'NULL' ) )
+        if not form.validate():
+            log.debug("auslib.web.views.rules.RulesAPIView:")
+            log.debug(form.errors)
+
+            return Response(status=400, response=form.errors)
+        what = dict(throttle=form.throttle.data,   
+                mapping=form.mapping.data,
+                priority=form.priority.data,
+                product = form.product.data,
+                version = form.version.data,
+                build_id = form.build_id.data,
+                channel = form.channel.data,
+                locale = form.locale.data,
+                distribution = form.distribution.data,
+                build_target = form.build_target.data,
+                os_version = form.os_version.data,
+                dist_version = form.dist_version.data,
+                comment = form.comment.data,
+                update_type = form.update_type.data,
+                header_arch = form.header_arch.data)
+        rule_id = retry(db.rules.addRule, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
+                kwargs=dict(changed_by=changed_by, what=what, transaction=transaction))
+        return Response(status=200, response=rule_id)
+
 
 class SingleRuleView(AdminView):
     """ /rules/<rule_id> """
@@ -146,11 +153,12 @@ class SingleRuleView(AdminView):
                     comment = form.comment.data,
                     update_type = form.update_type.data,
                     header_arch = form.header_arch.data)
-        log.debug("SingleRuleView: POST: old_data_version: %s", form.data_version.data)
+        log.debug("auslib.web.views.rules.SingleRuleView: POST: old_data_version: %s", form.data_version.data)
         retry(db.rules.updateRule, sleeptime=5, retry_exceptions=(SQLAlchemyError,),
                   kwargs=dict(changed_by=changed_by, rule_id=rule_id, what=what, old_data_version=form.data_version.data, transaction=transaction))
         return Response(status=200)
 
 
-app.add_url_rule('/rules', view_func=RulesPageView.as_view('rules.html'))
+app.add_url_rule('/rules.html', view_func=RulesPageView.as_view('rules.html'))
+app.add_url_rule('/rules', view_func=RulesAPIView.as_view('rules'))
 app.add_url_rule('/rules/<rule_id>', view_func=SingleRuleView.as_view('setrule'))

@@ -155,8 +155,11 @@ $(document).ready(function() {
 function getRuleUrl(rule_id) {
     return SCRIPT_ROOT + '/rules/' + rule_id;
 }
-function getBaseRuleUrl() {
+function getRuleAPIUrl() {
     return SCRIPT_ROOT + '/rules';
+}
+function getBaseRuleUrl() {
+    return SCRIPT_ROOT + '/rules.html';
 }
 
 function getData(prefix, ruleForm){
@@ -194,7 +197,7 @@ function submitRuleForm(ruleForm){
 }
 
 function submitNewRuleForm(ruleForm, table) {
-    url = getBaseRuleUrl();
+    url = getRuleAPIUrl();
     data = getData('new_rule', ruleForm);
 
     console.log(data);

@@ -384,18 +384,25 @@ class TestRulesSimple(unittest.TestCase, RulesTestMixin, MemoryDatabaseMixin):
                     priority=60)
         rule_id = self.paths.addRule(changed_by='bill', what=what) 
         rule_id = rule_id[0]
-        rule = self._stripNullColumns([self.paths.getRuleById(rule_id)])
+        rules = self.paths.t.select().where(self.paths.rule_id==rule_id).execute().fetchall()
+        copy_rule = dict(rules[0].items())
+        rule = self._stripNullColumns( [copy_rule] )
         what['rule_id']=rule_id
         what['data_version']=1
         what = [what]
         self.assertEquals(rule, what)
 
     def testUpdateRule(self):
-        what = self.paths.getRuleById(1)
-        #self.assertTrue(False, what[0])
+        rules = self.paths.t.select().where(self.paths.rule_id==1).execute().fetchall()
+        what = dict(rules[0].items())
+
         what['mapping'] = 'd'
         self.paths.updateRule(changed_by='bill', rule_id=1, what=what, old_data_version=1)
-        rule = self._stripNullColumns([self.paths.getRuleById(1)])
+
+        rules = self.paths.t.select().where(self.paths.rule_id==1).execute().fetchall()
+        copy_rule = dict(rules[0].items())
+        rule = self._stripNullColumns( [copy_rule] )
+
         expected = [dict(rule_id=1, priority=100, throttle=100, version='3.5', buildTarget='d', mapping='d', update_type='z', data_version=1)]
         self.assertEquals(rule, expected)
 
