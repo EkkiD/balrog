@@ -35,17 +35,18 @@ class JSONTextField(TextField):
             self.data = {}
 
 class NullableTextField(TextField):
-    """TextField that parses incoming data as JSON."""
+    """TextField that parses incoming data converting empty strings to None's."""
     def process_formdata(self, valuelist):
+        log.debug("NullableTextField.process_formdata: data %s", valuelist)
         if valuelist and valuelist[0]:
-            if valuelist[0] == '' or self.data == '':
+            if valuelist[0] == '':
                 log.debug("NullableTextField.process_formdata: data is empty string, setting it to NULL", valuelist[0])
-                valuelist[0] = None
                 self.data = None
+            else:
+                self.data = valuelist[0]
         else:
             log.debug('NullableTextField: No value list, setting self.data to None')
             self.data = None
-            valuelist[0] = None
 
 class DbEditableForm(Form):
     data_version = HiddenField('data_version', validators=[Required(), NumberRange()])
