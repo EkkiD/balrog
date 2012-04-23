@@ -23,6 +23,7 @@ class RulesPageView(AdminView):
         new_rule_form.mapping.choices = [(item['name'],item['name']) for item in 
                 releaseNames]
         new_rule_form.mapping.choices.insert(0, ('', 'NULL' ))
+        log.debug(new_rule_form.update_type.choices)
         forms = {}
 
         for rule in rules:
