@@ -72,10 +72,8 @@ function submitPermissionForm(username, permissionForm, element) {
 }
 
 
-function submitNewReleaseForm(releaseForm){
+function submitNewReleaseForm(releaseForm, table){
     name = $('[name*=name]', releaseForm).val();
-
-    console.log(name);
 
     var url = getReleaseUrl(name);
 
@@ -83,9 +81,8 @@ function submitNewReleaseForm(releaseForm){
     var version = $('[name*=version]', releaseForm).val();
     var product = $('[name*=product]', releaseForm).val();
     var blob_field = $('[name*=blob]', releaseForm);
+    var csrf =    $('[name*=csrf]', releaseForm).val();
 
-    console.log(blob_field);
-    console.log(blob_field[0].files[0]);
     file = blob_field[0].files[0];
 
     var fr = new FileReader();
@@ -94,21 +91,21 @@ function submitNewReleaseForm(releaseForm){
 
     function receivedText() {
         result = fr.result;
-        console.log(result);
         data = {
             'name': name,
             'version':version,
             'product': product,
             'blob': result,
-            'data_version': data_version
+            'data_version': data_version,
+            'csrf': csrf
         };
         $.ajax(url, {'type': 'put', 'data': data})
             .error(handleError
                   ).success(function(data) {
-                      $.get(url, {'format': 'html'})
+                      $.get(url)
                       .error(handleError
                           ).success(function(data) {
-                              element.append(data);
+                              table.append(data);
                           });
                   });
     }

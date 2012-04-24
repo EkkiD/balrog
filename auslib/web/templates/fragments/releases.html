@@ -1,6 +1,6 @@
 {% if releases %}
 <h3>Below is a complete list of all of the releases. Click through to access the data field.</h3>
-<table>
+<table id="Releases_table">
     <tr>
         <th>Name</th>
         <th>Product</th>
@@ -8,12 +8,7 @@
         <th>Data</th>
     </tr>
     {% for row in releases %}
-    <tr>
-        <td>{{ row['name'] }}</td>
-        <td>{{ row['product'] }}</td>
-        <td>{{ row['version'] }}</td>
-        <td> <a href='releases/{{ row.name }}'>link</a></td>
-    </tr>
+        {% include 'fragments/release_row.html' %}
     {% endfor %}
 </table>
 </form>

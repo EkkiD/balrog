@@ -6,12 +6,12 @@
     {% if addForm %}
     <h3>Add a new release: </h3>
     <div id='new_release'>
-        <form id='ReleasesForm' onsubmit='submitNewReleaseForm($("#ReleasesForm")); return false;'>
+        <form id='ReleasesForm' onsubmit='submitNewReleaseForm($("#ReleasesForm"), $("#Releases_table")); return false;'>
+            {{ addForm.hidden_tag() }}
             {{ addForm.name.label()|safe }}:{{ addForm.name|safe }} 
             {{ addForm.product.label()|safe }}:{{ addForm.product|safe }} 
             {{ addForm.version.label()|safe }}:{{ addForm.version|safe }} 
             {{ addForm.blob.label()|safe }}:{{ addForm.blob|safe }} 
-            {{ addForm.data_version|safe }}  
             <input type='submit' name='submit' value='Submit!' /> 
     </div>
     </tr>

@@ -1,7 +1,7 @@
 import simplejson as json
 import sys
 
-from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, IntegerField, SelectField, FileField, file_required
+from flaskext.wtf import Form, TextField, HiddenField, Required, TextInput, NumberRange, IntegerField, SelectField, FileField, file_required, validators
 
 from auslib.blob import ReleaseBlobV1
 
@@ -22,7 +22,7 @@ def JSONCatch(func):
     def process_formdata(self, valuelist):
         if valuelist and valuelist[0]:
             try:
-                self.data = json.loads(valuelist[0])
+                func(self, valuelist)
             # XXX: use JSONDecodeError when the servers support it
             except ValueError, e:
                 # WTForms catches ValueError, which JSONDecodeError is a child
@@ -39,9 +39,8 @@ class JSONBlobFileField(FileField):
     """FileField that parses incoming data as JSON and converts it into a blob"""
     @JSONCatch
     def process_formdata(self, valuelist):
-        blob = ReleaseBlobV1()
-        blob.loadJSON(valuelist[0])
-        self.data = blob
+        self.data = ReleaseBlobV1()
+        self.data.loadJSON(valuelist[0])
 
 class JSONTextField(TextField):
     """TextField that parses incoming data as JSON."""
@@ -95,7 +94,7 @@ class RuleForm(Form):
 class EditRuleForm(RuleForm, DbEditableForm):
     pass
 
-class NewReleaseForm(DbEditableForm):
+class NewReleaseForm(Form):
     name = TextField('Name', validators=[Required()])
     version = TextField('Version', validators=[Required()])
     product = TextField('Product', validators=[Required()])
