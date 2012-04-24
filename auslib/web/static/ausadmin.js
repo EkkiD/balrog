@@ -1,4 +1,5 @@
 function handleError(response, code, error) {
+    console.log(response);
     alert(response.responseText);
 }
 
@@ -83,6 +84,7 @@ function submitNewReleaseForm(releaseForm, table){
     var blob_field = $('[name*=blob]', releaseForm);
     var csrf =    $('[name*=csrf]', releaseForm).val();
 
+    console.log(csrf);
     file = blob_field[0].files[0];
 
     var fr = new FileReader();
@@ -100,14 +102,14 @@ function submitNewReleaseForm(releaseForm, table){
             'csrf': csrf
         };
         $.ajax(url, {'type': 'put', 'data': data})
-            .error(handleError
-                  ).success(function(data) {
-                      $.get(url)
-                      .error(handleError
-                          ).success(function(data) {
-                              table.append(data);
-                          });
-                  });
+            .error(handleError)
+            .success(function(data) {
+                  $.get(url)
+                  .error(handleError).
+                  success(function(data) {
+                          table.append(data);
+                      });
+              });
     }
 }
 

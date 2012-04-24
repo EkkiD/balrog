@@ -98,4 +98,4 @@ class NewReleaseForm(Form):
     name = TextField('Name', validators=[Required()])
     version = TextField('Version', validators=[Required()])
     product = TextField('Product', validators=[Required()])
-    blob = JSONBlobFileField('Data', validators=[Required(), file_required()])
+    blob = JSONBlobFileField('Data', validators=[])
