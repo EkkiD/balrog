@@ -3,10 +3,10 @@ import unittest
 from auslib.blob import Blob, ReleaseBlobV1
 
 class SimpleBlob(Blob):
-    format = {'foo': None}
+    format_ = {'foo': None}
 
 class MultiLevelBlob(Blob):
-    format = {
+    format_ = {
         'foo': {
             'bar': {
                 'baz': None
@@ -15,7 +15,7 @@ class MultiLevelBlob(Blob):
     }
 
 class BlobWithWildcard(Blob):
-    format = {
+    format_ = {
         'foo': {
             '*': None
         }
@@ -75,4 +75,12 @@ class TestReleaseBlobV1(unittest.TestCase):
     def testGetBuildIDLocaleOnly(self):
         blob = ReleaseBlobV1(platforms=dict(c=dict(locales=dict(d=dict(buildID=9)))))
         self.assertEquals(9, blob.getBuildID('c', 'd'))
+
+    def testGetBuildIDMissingLocale(self):
+        blob = ReleaseBlobV1(platforms=dict(c=dict(locales=dict(d=dict(buildID=9)))))
+        self.assertRaises(KeyError, blob.getBuildID, 'c', 'a')
+
+    def testGetBuildIDMissingLocaleBuildIDAtPlatform(self):
+        blob = ReleaseBlobV1(platforms=dict(c=dict(buildID=9, locales=dict(d=dict()))))
+        self.assertRaises(KeyError, blob.getBuildID, 'c', 'a')
     # XXX: should we support the locale overriding the platform? this should probably be invalid

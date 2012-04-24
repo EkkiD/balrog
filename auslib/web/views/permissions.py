@@ -1,6 +1,6 @@
 import simplejson as json
 
-from flask import render_template, request, Response, jsonify
+from flask import render_template, request, Response, jsonify, make_response
 
 from auslib.web.base import app, db
 from auslib.web.views.base import requirelogin, requirepermission, AdminView
@@ -8,6 +8,8 @@ from auslib.web.views.forms import NewPermissionForm, ExistingPermissionForm
 
 import logging
 log = logging.getLogger(__name__)
+
+__all__ = ["UsersView", "PermissionsView", "SpecificPermissionView", "PermissionsPageView", "UserPermissionsPageView"]
 
 def setpermission(f):
     def decorated(*args, **kwargs):
@@ -32,7 +34,7 @@ class UsersView(AdminView):
             # http://flask.pocoo.org/docs/security/#json-security
             return jsonify(dict(users=users))
         else:
-            return render_template('snippets/users.html', users=users)
+            return render_template('fragments/users.html', users=users)
 
 class PermissionsView(AdminView):
     """/users/[user]/permissions"""
@@ -47,7 +49,7 @@ class PermissionsView(AdminView):
             for perm, values in permissions.items():
                 prefix = permission2selector(perm)
                 forms.append(ExistingPermissionForm(prefix=prefix, permission=perm, options=values['options'], data_version=values['data_version']))
-            return render_template('snippets/user_permissions.html', username=username, permissions=permissions)
+            return render_template('fragments/user_permissions.html', username=username, permissions=permissions)
 
 class SpecificPermissionView(AdminView):
     """/users/[user]/permissions/[permission]"""
@@ -64,46 +66,44 @@ class SpecificPermissionView(AdminView):
         else:
             prefix = permission2selector(permission)
             form = ExistingPermissionForm(prefix=prefix, permission=permission, options=perm['options'], data_version=perm['data_version'])
-            return render_template('snippets/permission.html', username=username, form=form)
+            return render_template('fragments/permission.html', username=username, form=form)
 
     @setpermission
     @requirelogin
-    @requirepermission(options=[])
+    @requirepermission('/users/:id/permissions/:permission', options=[])
     def _put(self, username, permission, changed_by, transaction):
         try:
-            if db.permissions.getUserPermissions(username).get(permission):
+            if db.permissions.getUserPermissions(username, transaction).get(permission):
                 form = ExistingPermissionForm()
                 if not form.data_version.data:
                     raise ValueError("Must provide the data version when updating an existing permission.")
-                db.permissions.updatePermission(changed_by, username, permission, form.data_version.data, form.options.data)
-                return Response(status=200)
+                db.permissions.updatePermission(changed_by, username, permission, form.data_version.data, form.options.data, transaction=transaction)
+                new_data_version = db.permissions.getPermission(username=username, permission=permission, transaction=transaction)['data_version']
+                return make_response(json.dumps(dict(new_data_version=new_data_version)), 200)
             else:
                 form = NewPermissionForm()
                 db.permissions.grantPermission(changed_by, username, permission, form.options.data, transaction=transaction)
-                return Response(status=201)
+                return make_response(json.dumps(dict(new_data_version=1)), 201)
         except ValueError, e:
             return Response(status=400, response=e.args)
-        except Exception, e:
-            return Response(status=500, response=e.args)
 
     @setpermission
     @requirelogin
-    @requirepermission(options=[])
+    @requirepermission('/users/:id/permissions/:permission', options=[])
     def _post(self, username, permission, changed_by, transaction):
         if not db.permissions.getUserPermissions(username, transaction=transaction).get(permission):
             return Response(status=404)
         try:
             form = ExistingPermissionForm()
-            db.permissions.updatePermission(changed_by, username, permission, form.data_version.data, form.options.data)
-            return Response(status=200)
+            db.permissions.updatePermission(changed_by, username, permission, form.data_version.data, form.options.data, transaction=transaction)
+            new_data_version = db.permissions.getPermission(username=username, permission=permission, transaction=transaction)['data_version']
+            return make_response(json.dumps(dict(new_data_version=new_data_version)), 200)
         except ValueError, e:
             return Response(status=400, response=e.args)
-        except Exception, e:
-            return Response(status=500, response=e.args)
 
     @setpermission
     @requirelogin
-    @requirepermission(options=[])
+    @requirepermission('/users/:id/permissions/:permission', options=[])
     def _delete(self, username, permission, changed_by, transaction):
         if not db.permissions.getUserPermissions(username, transaction=transaction).get(permission):
             return Response(status=404)
@@ -115,11 +115,7 @@ class SpecificPermissionView(AdminView):
             db.permissions.revokePermission(changed_by, username, permission, form.data_version.data, transaction=transaction)
             return Response(status=200)
         except ValueError, e:
-            raise
             return Response(status=400, response=e.args)
-        except Exception, e:
-            raise
-            return Response(status=500, response=e.args)
 
 class PermissionsPageView(AdminView):
     """/permissions.html"""

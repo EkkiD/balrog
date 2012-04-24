@@ -5,7 +5,7 @@ import sys
 import time
 
 from sqlalchemy import Table, Column, Integer, Text, String, MetaData, \
-  CheckConstraint, create_engine, select, BigInteger
+  CheckConstraint, create_engine, select, BigInteger, desc
 from sqlalchemy.exc import SQLAlchemyError
 
 from auslib.blob import ReleaseBlobV1
@@ -49,30 +49,43 @@ class AUSTransaction(object):
        @param conn: connection object to perform the transaction on
        @type conn: sqlalchemy.engine.base.Connection
     """
-    def __init__(self, conn):
-        self.conn = conn
-        self.trans = conn.begin()
+    def __init__(self, engine):
+        self.engine = engine
+        self.conn = self.engine.connect()
+        self.trans = self.conn.begin()
 
     def __enter__(self):
         return self
 
     def __exit__(self, *exc):
-        # If something that executed in the context raised an Exception,
-        # rollback and re-raise it.
-        if exc[0]:
-            self.rollback()
-            raise exc[0], exc[1], exc[2]
-        # Also need to check for exceptions during commit!
         try:
-            self.commit()
-        except:
-            self.rollback()
-            raise
+            # If something that executed in the context raised an Exception,
+            # rollback and re-raise it.
+            log.debug("AUSTransaction.__exit__: exc is: %s" % str(exc))
+            if exc[0]:
+                self.rollback()
+                raise exc[0], exc[1], exc[2]
+            # Also need to check for exceptions during commit!
+            try:
+                self.commit()
+            except:
+                self.rollback()
+                raise
+        finally:
+            # Always make sure the connection is closed, bug 740360
+            self.close()
+
+    def close(self):
+        # For some reason, sometimes the connection appears to close itself...
+        if not self.conn.closed:
+            self.conn.close()
 
     def execute(self, statement):
         try:
+            log.debug("AUSTransaction.execute: Attempting to execute %s" % statement)
             return self.conn.execute(statement)
         except:
+            log.debug("AUSTransaction.execute: Caught exception")
             # We want to raise our own Exception, so that errors are easily
             # caught by consumers. The dance below lets us do that without
             # losing the original Traceback, which will be much more
@@ -185,6 +198,7 @@ class AUSTable(object):
            @rtype: sqlalchemy.engine.base.ResultProxy
         """
         query = self._selectStatement(**kwargs)
+        log.debug("AUSTable.select: Executing query: '%s'", query)
         if transaction:
             return transaction.execute(query).fetchall()
         else:
@@ -211,7 +225,9 @@ class AUSTable(object):
         data = columns.copy()
         if self.versioned:
             data['data_version'] = 1
-        ret = trans.execute(self._insertStatement(**data))
+        query = self._insertStatement(**data)
+        log.debug("AUSTable._prepareInsert: Executing query: '%s' with values: %s", query, data)
+        ret = trans.execute(query)
         if self.history:
             for q in self.history.forInsert(ret.inserted_primary_key, data, changed_by):
                 trans.execute(q)
@@ -237,10 +253,8 @@ class AUSTable(object):
         if transaction:
             return self._prepareInsert(transaction, changed_by, **columns)
         else:
-            trans = AUSTransaction(self.getEngine().connect())
-            ret = self._prepareInsert(trans, changed_by, **columns)
-            trans.commit()
-            return ret
+            with AUSTransaction(self.getEngine()) as trans:
+                return self._prepareInsert(trans, changed_by, **columns)
 
     def _deleteStatement(self, where):
         """Create a DELETE statement for this table.
@@ -271,7 +285,9 @@ class AUSTable(object):
             where = copy(where)
             where.append(self.data_version==old_data_version)
 
-        ret = trans.execute(self._deleteStatement(where))
+        query = self._deleteStatement(where)
+        log.debug("AUSTable._prepareDelete: Executing query: '%s'", query)
+        ret = trans.execute(query)
         if ret.rowcount != 1:
             raise OutdatedDataError("Failed to delete row, old_data_version doesn't match current data_version")
         if self.history:
@@ -303,10 +319,8 @@ class AUSTable(object):
         if transaction:
             return self._prepareDelete(transaction, where, changed_by, old_data_version)
         else:
-            trans = AUSTransaction(self.getEngine().connect())
-            ret = self._prepareDelete(trans, where, changed_by, old_data_version)
-            trans.commit()
-            return ret
+            with AUSTransaction(self.getEngine()) as trans:
+                return self._prepareDelete(trans, where, changed_by, old_data_version)
 
     def _updateStatement(self, where, what):
         """Create an UPDATE statement for this table
@@ -376,10 +390,8 @@ class AUSTable(object):
         if transaction:
             return self._prepareUpdate(transaction, where, what, changed_by, old_data_version)
         else:
-            trans = AUSTransaction(self.getEngine().connect())
-            ret = self._prepareUpdate(trans, where, what, changed_by, old_data_version)
-            trans.commit()
-            return ret
+            with AUSTransaction(self.getEngine()) as trans:
+                return self._prepareUpdate(trans, where, what, changed_by, old_data_version)
 
 class History(AUSTable):
     """Represents a history table that may be attached to another AUSTable.
@@ -392,6 +404,7 @@ class History(AUSTable):
        inputs, and are documented below. History tables are never versioned,
        and cannot have history of their own."""
     def __init__(self, metadata, baseTable):
+        self.baseTable = baseTable
         self.table = Table('%s_history' % baseTable.t.name, metadata,
             Column('change_id', Integer, primary_key=True, autoincrement=True),
             Column('changed_by', String(100), nullable=False),
@@ -429,6 +442,9 @@ class History(AUSTable):
         for i in range(0, len(self.base_primary_key)):
             name = self.base_primary_key[i]
             primary_key_data[name] = insertedKeys[i]
+            # Make sure the primary keys are included in the second row as well
+            columns[name]=insertedKeys[i]
+
         ts = self.getTimestamp()
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts-1, **primary_key_data))
         queries.append(self._insertStatement(changed_by=changed_by, timestamp=ts, **columns))
@@ -456,6 +472,118 @@ class History(AUSTable):
         row['timestamp'] = self.getTimestamp()
         log.debug("History.forUpdate: inserting %s to history table" % row)
         return self._insertStatement(**row)
+
+    def getChange(self, change_id, transaction=None):
+        """ Returns the unique change that matches the give change_id """
+        changes = self.select( where=[self.change_id==change_id], transaction=transaction)
+        found = len(changes)
+        if found > 1 or found == 0:
+            log.debug("History.getChange: Found %s changes, should have been 1", found)
+            return None
+        return changes[0]
+
+    def getPrevChange(self, change_id, row_primary_keys, transaction=None):
+        """ Returns the most recent change to a given row in the base table """
+        where = [self.change_id < change_id]
+        for i in range(0, len(self.base_primary_key)):
+            self_prim = getattr(self, self.base_primary_key[i])
+            where.append((self_prim == row_primary_keys[i]))
+
+        changes = self.select( where=where, transaction=transaction, limit=1, order_by=self.change_id.desc())
+        length = len(changes)
+        if(length == 0):   
+            log.debug("History.getPrevChange: No previous changes found")
+            return None
+        return changes[0]
+
+    def _stripNullColumns(self, change):
+        # We know a bunch of columns are going to be empty...easier to strip them out
+        # than to be super verbose (also should let this test continue to work even
+        # if the schema changes).
+        for key in change.keys():
+            if change[key] == None:
+                del change[key]
+        return change
+
+    def _stripHistoryColumns(self, change):
+        """ Will strip history specific columns as well as data_version from the given change """
+        log.debug(change)
+        del change['change_id']
+        del change['changed_by']
+        del change['timestamp']
+        del change['data_version']
+        return change
+
+    def _isNull(self, change, row_primary_keys):
+        # Define a row that's empty except for the primary keys
+        # This is what the NULL rows for inserts and deletes will look like.
+        null_row = dict()
+        for i in range(0, len(self.base_primary_key)):
+            null_row[self.base_primary_key[i]] = row_primary_keys[i]
+        return self._stripNullColumns(change) == null_row
+
+    def _isDelete(self, cur_base_state, row_primary_keys):
+        return self._isNull(cur_base_state.copy(), row_primary_keys)
+
+    def _isInsert(self, prev_base_state, row_primary_keys):
+        return self._isNull(prev_base_state.copy(), row_primary_keys)
+
+    def _isUpdate(self, cur_base_state, prev_base_state, row_primary_keys):
+        return (not self._isNull(cur_base_state.copy(), row_primary_keys) ) and (not self._isNull(prev_base_state.copy(), row_primary_keys))
+
+    def rollbackChange(self, change_id, changed_by, transaction=None):
+        """ Rollback the change given by the change_id,
+        Will handle all cases: insert, delete, update """
+
+        change = self.getChange(change_id , transaction)
+
+        # Get the values of the primary keys for the given row
+        row_primary_keys = [0]*len(self.base_primary_key)
+        for i in range(0, len(self.base_primary_key)):
+            row_primary_keys[i] = change[self.base_primary_key[i]]
+
+        # Strip the History Specific Columns from the cahgnes
+        prev_base_state = self._stripHistoryColumns(self.getPrevChange(change_id, row_primary_keys, transaction))
+        cur_base_state = self._stripHistoryColumns(change.copy())
+
+        # Define a row that's empty except for the primary keys
+        # This is what the NULL rows for inserts and deletes will look like.
+        null_row = dict()
+        for i in range(0, len(self.base_primary_key)):
+            null_row[self.base_primary_key[i]] = row_primary_keys[i]
+
+        # If the row has all NULLS, then the operation we're rolling back is a DELETE
+        # We need to do an insert, with the data from the previous change
+        if self._isDelete(cur_base_state, row_primary_keys):
+            log.debug("History.rollbackChange: reverting a DELETE")
+            self.baseTable.insert(changed_by=changed_by, transaction=transaction, **prev_base_state)
+
+        # If the previous change is NULL, then the operation is an INSERT
+        # We will need to do a delete.
+        elif self._isInsert(prev_base_state, row_primary_keys): 
+                log.debug("History.rollbackChange: reverting an INSERT")
+                where = []
+                for i in range(0, len(self.base_primary_key)):
+                    self_prim = getattr(self.baseTable, self.base_primary_key[i])
+                    where.append((self_prim == row_primary_keys[i]))
+
+                self.baseTable.delete(changed_by = changed_by, transaction=transaction, where=where, old_data_version = change['data_version'])
+
+        elif self._isUpdate(cur_base_state, prev_base_state, row_primary_keys): 
+        # If this operation is an UPDATE
+        # We will need to do an update to the previous change's state
+            log.debug("History.rollbackChange: reverting an UPDATE")
+            where = []
+            for i in range(0, len(self.base_primary_key)):
+                self_prim = getattr(self.baseTable, self.base_primary_key[i])
+                where.append((self_prim == row_primary_keys[i]))
+
+            what = prev_base_state
+            old_data_version = change['data_version']
+            self.baseTable.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version, transaction=transaction)
+        else:
+            log.debug("History.rollbackChange: ERROR, change doesn't correspond to any known operation")
+
 
 class Rules(AUSTable):
     def __init__(self, metadata, dialect):
@@ -510,6 +638,10 @@ class Rules(AUSTable):
         if self._matchesRegex(ruleChannel, fallbackChannel):
             return True
 
+    def addRule(self, changed_by, what, transaction=None):
+        ret = self.insert(changed_by=changed_by, transaction=transaction, **what)
+        return ret.inserted_primary_key
+
     def getOrderedRules(self, transaction=None):
         """Returns all of the rules, sorted in ascending order"""
         return self.select(order_by=(self.priority, self.version, self.mapping), transaction=transaction)
@@ -519,20 +651,20 @@ class Rules(AUSTable):
            For cases where a particular updateQuery channel has no
            fallback, fallbackChannel should match the channel from the query."""
         matchingRules = []
-        rules = self.select(
-            where=[
-                (self.throttle > 0) &
-                ((self.product==updateQuery['product']) | (self.product==None)) &
-                ((self.buildTarget==updateQuery['buildTarget']) | (self.buildTarget==None)) &
-                ((self.buildID==updateQuery['buildID']) | (self.buildID==None)) &
-                ((self.locale==updateQuery['locale']) | (self.locale==None)) &
-                ((self.osVersion==updateQuery['osVersion']) | (self.osVersion==None)) &
-                ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
-                ((self.distVersion==updateQuery['distVersion']) | (self.distVersion==None)) &
-                ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
-            ],
-            transaction=transaction
-        )
+        where=[
+            ((self.product==updateQuery['product']) | (self.product==None)) &
+            ((self.buildTarget==updateQuery['buildTarget']) | (self.buildTarget==None)) &
+            ((self.buildID==updateQuery['buildID']) | (self.buildID==None)) &
+            ((self.locale==updateQuery['locale']) | (self.locale==None)) &
+            ((self.osVersion==updateQuery['osVersion']) | (self.osVersion==None)) &
+            ((self.distribution==updateQuery['distribution']) | (self.distribution==None)) &
+            ((self.distVersion==updateQuery['distVersion']) | (self.distVersion==None)) &
+            ((self.headerArchitecture==updateQuery['headerArchitecture']) | (self.headerArchitecture==None))
+        ]
+        if updateQuery['force'] == False:
+            where.append(self.throttle > 0)
+        rules = self.select(where=where, transaction=transaction)
+        log.debug("Rules.getRulesMatchingQuery: where: %s" % where)
         log.debug("Rules.getRulesMatchingQuery: Raw matches:")
         for rule in rules:
             log.debug("Rules.getRulesMatchingQuery: %s", rule)
@@ -557,19 +689,16 @@ class Rules(AUSTable):
     def getRuleById(self, rule_id, transaction=None):
         """ Returns the unique rule that matches the give rule_id """
         rules = self.select( where=[self.rule_id==rule_id], transaction=transaction)
-        found = rules.__len__()
-        log.debug("Rules.getRuleById: Rules found: %s", found)
+        found = len(rules)
         if found > 1 or found == 0:
+            log.debug("Rules.getRuleById: Found %s rules, should have been 1", found)
             return None
-        log.debug("Rules.getRuleById: Match:")
-        log.debug("Rules.getRuleById: %s", rules[0])
         return rules[0]
 
     def updateRule(self, changed_by, rule_id, what, old_data_version, transaction=None):
         """ Update the rule given by rule_id with the parameter what """
         where = [self.rule_id==rule_id]
         self.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version, transaction=transaction)
-            
 
 
 class Releases(AUSTable):
@@ -633,12 +762,17 @@ class Releases(AUSTable):
         # Raises DuplicateDataError if the release already exists.
         self.insert(changed_by=changed_by, transaction=transaction, **columns)
 
-    def updateRelease(self, name, changed_by, old_data_version, product=None, version=None, transaction=None):
+    def updateRelease(self, name, changed_by, old_data_version, product=None, version=None, blob=None, transaction=None):
         what = {}
         if product:
             what['product'] = product
         if version:
             what['version'] = version
+        if blob:
+            if not blob.isValid():
+                log.debug("Releases.updateRelease: invalid blob is %s" % blob)
+                raise ValueError("Release blob is invalid.")
+            what['data'] = blob.getJSON()
         log.debug("Releases.updateRelease: Updating %s with %s", name, what)
         self.update(where=[self.name==name], what=what, changed_by=changed_by, old_data_version=old_data_version, transaction=transaction)
 
@@ -656,6 +790,8 @@ class Releases(AUSTable):
                     }
                 }
             }
+        if platform not in releaseBlob['platforms']:
+            releaseBlob['platforms'][platform] = dict(locales=dict())
         releaseBlob['platforms'][platform]['locales'][locale] = blob
         if not releaseBlob.isValid():
             log.debug("Releases.addLocaleToRelease: invalid releaseBlob is %s" % releaseBlob)
@@ -700,19 +836,6 @@ class Permissions(AUSTable):
         )
         AUSTable.__init__(self)
 
-    def canEditUsers(self, username, transaction=None):
-        where=[
-            (self.username==username) &
-            ((self.permission=='admin') | (self.permission=='/users/:id/permissions/:permission'))
-        ]
-        if self.select(where=where, transaction=transaction):
-            return True
-        return False
-
-    def assertCanEdit(self, username, transaction=None):
-        if not self.canEditUsers(username, transaction=transaction):
-            raise PermissionDeniedError('%s is not allowed to change permissions' % username)
-
     def assertPermissionExists(self, permission):
         if permission not in self.allPermissions.keys():
             raise ValueError('Unknown permission "%s"' % permission)
@@ -727,17 +850,17 @@ class Permissions(AUSTable):
         return [r['username'] for r in res]
 
     def grantPermission(self, changed_by, username, permission, options=None, transaction=None):
-        self.assertCanEdit(changed_by, transaction=transaction)
         self.assertPermissionExists(permission)
         if options:
             self.assertOptionsExist(permission, options)
         columns = dict(username=username, permission=permission)
         if options:
             columns['options'] = json.dumps(options)
+        log.debug("Permissions.grantPermission: granting %s to %s with options %s" % (permission, username, options))
         self.insert(changed_by=changed_by, transaction=transaction, **columns)
+        log.debug("Permissions.grantPermission: successfully granted %s to %s with options %s" % (permission, username, options))
 
     def updatePermission(self, changed_by, username, permission, old_data_version, options=None, transaction=None):
-        self.assertCanEdit(changed_by, transaction=transaction)
         self.assertPermissionExists(permission)
         if options:
             self.assertOptionsExist(permission, options)
@@ -748,9 +871,17 @@ class Permissions(AUSTable):
         self.update(changed_by=changed_by, where=where, what=what, old_data_version=old_data_version, transaction=transaction)
 
     def revokePermission(self, changed_by, username, permission, old_data_version, transaction=None):
-        self.assertCanEdit(changed_by, transaction=transaction)
         where = [self.username==username, self.permission==permission]
         self.delete(changed_by=changed_by, where=where, old_data_version=old_data_version, transaction=transaction)
+
+    def getPermission(self, username, permission, transaction=None):
+        try:
+            row = self.select(where=[self.username==username, self.permission==permission], transaction=transaction)[0]
+            if row['options']:
+                row['options'] = json.loads(row['options'])
+            return row
+        except IndexError:
+            return {}
 
     def getUserPermissions(self, username, transaction=None):
         rows = self.select(columns=[self.permission, self.options, self.data_version], where=[self.username==username], transaction=transaction)
@@ -834,7 +965,7 @@ class AUSDatabase(object):
         self.metadata.bind = None
 
     def begin(self):
-        return AUSTransaction(self.engine.connect())
+        return AUSTransaction(self.engine)
 
     @property
     def rules(self):

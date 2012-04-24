@@ -6,9 +6,6 @@ function getPermissionUrl(username, permission) {
     return SCRIPT_ROOT + '/users/' + username + '/permissions/' + permission;
 }
 
-function getRuleUrl(rule_id) {
-    return SCRIPT_ROOT + '/rules/' + rule_id;
-}
 
 function getReleaseUrl(release) {
     return SCRIPT_ROOT + '/releases/' + release;
@@ -56,38 +53,24 @@ function deletePermission(username, permission, data_version) {
 
 function submitPermissionForm(username, permissionForm, element) {
     clicked = permissionForm.data('clicked');
-    permission = $('[name*=permission]', permissionForm).val();
-    options = $('[name*=options]', permissionForm).val();
-    data_version = $('[name*=data_version]', permissionForm).val();
+    permission = $('[name*=permission]', permissionForm);
+    options = $('[name*=options]', permissionForm);
+    data_version = $('[name*=data_version]', permissionForm);
     if (clicked === 'update') {
-        updatePermission(username, permission, options, data_version);
+        updatePermission(username, permission.val(), options.val(), data_version.val())
+        .success(function(data) {
+            data = JSON.parse(data);
+            data_version.val(data.new_data_version);
+        });
     }
     else if (clicked === 'delete') {
-        deletePermission(username, permission, data_version)
+        deletePermission(username, permission.val(), data_version.val())
         .success(function() {
             element.remove();
         });
     }
 }
 
-function submitRuleForm(ruleForm){
-    rule_id = ruleForm.data('rule_id');
-
-    url = getRuleUrl(rule_id);
-
-    throttle = $('[name='+rule_id+'-throttle]', ruleForm).val();
-    data_version = $('[name='+rule_id+'-data_version]', ruleForm).val();
-    mapping = $('[name='+rule_id+'-mapping]', ruleForm).val();
-    priority = $('[name='+rule_id+'-priority]', ruleForm).val();
-    data = {
-        'throttle': throttle,
-        'mapping': mapping,
-        'priority': priority,
-        'data_version': data_version
-    };
-    return $.ajax(url,{'type': 'post', 'data': data})
-        .error(handleError);
-}
 
 function submitNewReleaseForm(releaseForm){
     name = $('[name*=name]', releaseForm).val();
