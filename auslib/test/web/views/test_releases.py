@@ -210,6 +210,26 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
             self.assertEqual(ret['version'], 'a')
             self.assertEqual(json.loads(ret['data']), dict(name='a'))
 
+    # Test get of a release's full data column, queried by name
+    def testGetSingleReleaseBlob(self):
+        ret = self._get("/releases/d/blob")
+        self.assertStatusCode(ret, 200)
+        self.assertEqual(json.loads(ret.data), json.loads("""
+{
+    "name": "d",
+    "platforms": {
+        "p": {
+            "locales": {
+                "d": {
+                    "complete": {
+                        "filesize": 1234
+                    }
+                }
+            }
+        }
+    }
+}
+"""), msg=ret.data)
 
 
 class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
@@ -224,4 +244,39 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
         ret = self._get("/releases/d")
         self.assertStatusCode(ret, 200)
         self.assertTrue("<td> <a href='releases/d/blob'>link</a></td>" in ret.data, msg=ret.data)
+
+    def testNewRulePost(self):
+        ret = self._post('/releases/new_release', data=dict(version='11', product='Firefox',
+                                                            blob=json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                }
+            }
+        }
+    }
+}
+""")))
+        self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
+        r = db.releases.t.select().where(db.releases.name=='new_release').execute().fetchall()
+        self.assertEquals(len(r), 1)
+        self.assertEquals(r[0]['name'], 'new_release')
+        self.assertEquals(r[0]['version'], '11')
+        self.assertEquals(r[0]['product'], 'Firefox')
+        self.assertEquals(r[0]['blob'], json.loads("""
+{
+    "name": "a",
+    "platforms": {
+        "p": {
+            "locales": {
+                "l": {
+                }
+            }
+        }
+    }
+}
+"""))
 
