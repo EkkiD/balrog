@@ -210,28 +210,6 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
             self.assertEqual(ret['version'], 'a')
             self.assertEqual(json.loads(ret['data']), dict(name='a'))
 
-    # Test get of a release's full data column, queried by name
-    def testGetSingleRelease(self):
-        ret = self._get("/releases/d")
-        self.assertStatusCode(ret, 200)
-        self.assertEqual(json.loads(ret.data), json.loads("""
-{
-    "name": "d",
-    "platforms": {
-        "p": {
-            "locales": {
-                "d": {
-                    "complete": {
-                        "filesize": 1234
-                    }
-                }
-            }
-        }
-    }
-}
-"""), msg=ret.data)
-
-
 
 
 class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
@@ -239,5 +217,11 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
     def testGetReleases(self):
         ret = self._get("/releases.html")
         self.assertStatusCode(ret, 200)
-        self.assertTrue("<td> <a href='releases/ab'>link</a></td>" in ret.data, msg=ret.data)
+        self.assertTrue('<table id="Releases_table">' in ret.data, msg=ret.data)
+
+    # Test get of a release's full data column, queried by name
+    def testGetSingleRelease(self):
+        ret = self._get("/releases/d")
+        self.assertStatusCode(ret, 200)
+        self.assertTrue("<td> <a href='releases/d/blob'>link</a></td>" in ret.data, msg=ret.data)
 
