@@ -41,6 +41,7 @@ class JSONBlobFileField(FileField):
     def process_formdata(self, valuelist):
         self.data = ReleaseBlobV1()
         self.data.loadJSON(valuelist[0])
+        self.data.isValid()
 
 class JSONTextField(TextField):
     """TextField that parses incoming data as JSON."""
