@@ -20,7 +20,8 @@ class DisableableTextInput(TextInput):
             kwargs['disabled'] = 'disabled'
         return TextInput.__call__(self, *args, **kwargs)
 
-class JSONFieldMixin():
+class JSONFieldMixin(object):
+    """ Factors out the common logic to all JSON fields for the processing of formdata """
 
     def process_formdata(self, valuelist):
         if valuelist and valuelist[0]:

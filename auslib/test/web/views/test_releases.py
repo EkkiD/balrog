@@ -245,7 +245,7 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
         self.assertStatusCode(ret, 200)
         self.assertTrue("<td> <a href='releases/d/data'>link</a></td>" in ret.data, msg=ret.data)
 
-    def testNewReleasePost(self):
+    def testNewReleasePut(self):
 
         ret = self._put('/releases/new_release', data=dict(name='new_release', version='11', product='Firefox',
                                                             blob="""
