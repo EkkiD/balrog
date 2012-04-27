@@ -111,8 +111,8 @@ class SingleReleaseView(AdminView):
     def _put(self, release, changed_by, transaction):
         form = NewReleaseForm()
         if not form.validate():
-
             return Response(status=400, response=form.errors)
+
         retry(db.releases.addRelease, sleeptime=5, retry_exceptions=(SQLAlchemyError,), 
                 kwargs=dict(name=release, product=form.product.data, version=form.version.data, blob=form.blob.data, changed_by=changed_by,  transaction=transaction))
         return Response(status=201)

@@ -212,7 +212,7 @@ class TestReleasesAPI_JSON(ViewTest, JSONTestMixin):
 
     # Test get of a release's full data column, queried by name
     def testGetSingleReleaseBlob(self):
-        ret = self._get("/releases/d/blob")
+        ret = self._get("/releases/d/data")
         self.assertStatusCode(ret, 200)
         self.assertEqual(json.loads(ret.data), json.loads("""
 {
@@ -243,11 +243,12 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
     def testGetSingleRelease(self):
         ret = self._get("/releases/d")
         self.assertStatusCode(ret, 200)
-        self.assertTrue("<td> <a href='releases/d/blob'>link</a></td>" in ret.data, msg=ret.data)
+        self.assertTrue("<td> <a href='releases/d/data'>link</a></td>" in ret.data, msg=ret.data)
 
-    def testNewRulePost(self):
-        ret = self._post('/releases/new_release', data=dict(version='11', product='Firefox',
-                                                            blob=json.loads("""
+    def testNewReleasePost(self):
+
+        ret = self._put('/releases/new_release', data=dict(name='new_release', version='11', product='Firefox',
+                                                            blob="""
 {
     "name": "a",
     "platforms": {
@@ -259,14 +260,16 @@ class TestReleasesAPI_HTML(ViewTest, HTMLTestMixin):
         }
     }
 }
-""")))
-        self.assertEquals(ret.status_code, 200, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
+"""))
+                                                            
+                                                        #json.dumps(newReleaseFile.getvalue())))
+        self.assertEquals(ret.status_code, 201, "Status Code: %d, Data: %s" % (ret.status_code, ret.data))
         r = db.releases.t.select().where(db.releases.name=='new_release').execute().fetchall()
         self.assertEquals(len(r), 1)
         self.assertEquals(r[0]['name'], 'new_release')
         self.assertEquals(r[0]['version'], '11')
         self.assertEquals(r[0]['product'], 'Firefox')
-        self.assertEquals(r[0]['blob'], json.loads("""
+        self.assertEquals(json.loads(r[0]['data']), json.loads("""
 {
     "name": "a",
     "platforms": {
